@@ -1,3 +1,5 @@
-void main(List<String> arguments) {
-  print('Backend iniciado.');
+import 'package:backend/main.dart' as app;
+
+void main() {
+  app.main();
 }
