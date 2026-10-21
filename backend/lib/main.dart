@@ -1,16 +1,16 @@
-import 'package:shelf/shelf.dart';
+import 'dart:io';
+
 import 'package:shelf/shelf_io.dart' as shelf_io;
 
-import 'core/routes/router.dart';
+import 'app.dart';
+import 'core/config/ambiente.dart';
 
 Future<void> main() async {
-  final router = createRouter();
-
-  final handler = const Pipeline()
-      .addMiddleware(logRequests())
-      .addHandler(router.call);
-
-  await shelf_io.serve(handler, 'localhost', 8080);
-
-  print('Servidor iniciado em http://localhost:8080');
+  final ambiente = Ambiente.atual;
+  final servidor = await shelf_io.serve(
+    criarApp(),
+    InternetAddress.anyIPv4,
+    ambiente.porta,
+  );
+  print('Servidor iniciado na porta ${servidor.port}');
 }
