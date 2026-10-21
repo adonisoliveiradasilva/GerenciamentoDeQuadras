@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: postgres:18
     container_name: gerenciador-quadras-postgres
     restart: always
 
@@ -8,12 +8,13 @@ services:
       POSTGRES_DB: gerenciador_quadras
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
 
     ports:
       - "5432:5432"
 
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
 volumes:
   postgres_data:
