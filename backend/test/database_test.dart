@@ -1,7 +1,3 @@
-// Teste de integração do ORM. Precisa de um PostgreSQL 18+ acessível via
-// DATABASE_URL (variável de ambiente ou .env) com as migrações aplicadas:
-//   dart run orm.config.dart migrate apply
-//   dart test test/database_test.dart
 @Tags(['integration'])
 library;
 
@@ -12,7 +8,7 @@ void main() {
   late Database<Postgres> db;
   final createdIds = <int>[];
 
-  setUpAll(() => db = createDatabase(maxConnections: 2));
+  setUpAll(() => db = criarBancoDeDados(maxConexoes: 2));
 
   tearDownAll(() async {
     if (createdIds.isNotEmpty) {
