@@ -94,12 +94,14 @@ class UsuarioRepositorioOrm implements UsuarioRepositorio {
     int id,
     AlteracaoUsuario dados, {
     Perfil? perfil,
+    String? novaSenhaHash,
   }) => _tratandoEmailDuplicado(() async {
     final alterados = await _ativos(id: id, perfil: perfil).patch(
       nome: .set(dados.nome),
       email: .set(dados.email.toLowerCase()),
       telefone: .set(dados.telefone),
       dataNascimento: .set(_paraData(dados.dataNascimento)),
+      senhaHash: novaSenhaHash == null ? const .keep() : .set(novaSenhaHash),
       atualizadoEm: .set(DateTime.now().toUtc()),
     );
     return alterados == 0 ? null : buscarPorId(id);

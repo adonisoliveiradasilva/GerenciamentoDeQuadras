@@ -129,3 +129,54 @@ Content-Type: application/json
 ### Remover cliente
 DELETE {{base}}/clientes/{{clienteId}}
 Authorization: Bearer {{token}}
+
+### Listar funcionários (só gerente)
+GET {{base}}/funcionarios?pagina=1&tamanho=10&busca=&ordenar=nome
+Authorization: Bearer {{token}}
+
+### Cadastrar funcionário (senha obrigatória)
+# @name novoFuncionario
+POST {{base}}/funcionarios
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Carlos Dias",
+  "email": "carlos@email.com",
+  "dataNascimento": "1995-03-10",
+  "senha": "senhaDoCarlos1",
+  "confirmarSenha": "senhaDoCarlos1"
+}
+
+###
+@funcionarioId = {{novoFuncionario.response.body.id}}
+
+### Detalhar funcionário
+GET {{base}}/funcionarios/{{funcionarioId}}
+Authorization: Bearer {{token}}
+
+### Editar funcionário (sem senha: mantém a atual)
+PUT {{base}}/funcionarios/{{funcionarioId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Carlos A. Dias",
+  "email": "carlos@email.com"
+}
+
+### Editar funcionário trocando a senha
+PUT {{base}}/funcionarios/{{funcionarioId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Carlos A. Dias",
+  "email": "carlos@email.com",
+  "senha": "novaSenha123",
+  "confirmarSenha": "novaSenha123"
+}
+
+### Remover funcionário
+DELETE {{base}}/funcionarios/{{funcionarioId}}
+Authorization: Bearer {{token}}
