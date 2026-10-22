@@ -1,0 +1,92 @@
+@base = http://localhost:8080
+@email = gerente@arena.com
+@senha = senhaForte123
+
+### API no ar?
+GET {{base}}/
+
+### Login
+# @name login
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "senha": "{{senha}}"
+}
+
+###
+@token = {{login.response.body.token}}
+
+### Quem sou eu
+GET {{base}}/auth/eu
+Authorization: Bearer {{token}}
+
+### Listar quadras
+GET {{base}}/quadras?pagina=1&tamanho=10&ordenar=nome&direcao=asc
+Authorization: Bearer {{token}}
+
+### Buscar quadras por nome ou localização
+GET {{base}}/quadras?busca=bloco
+Authorization: Bearer {{token}}
+
+### Criar quadra
+# @name novaQuadra
+POST {{base}}/quadras
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Quadra 1",
+  "localizacao": "Bloco A",
+  "descricao": "Society com grama sintética",
+  "duracaoSessaoMin": 60,
+  "horarios": [
+    { "diaSemana": 1, "inicio": "08:00", "fim": "12:00" },
+    { "diaSemana": 1, "inicio": "13:00", "fim": "21:00" },
+    { "diaSemana": 6, "inicio": "08:00", "fim": "18:00" }
+  ]
+}
+
+###
+@quadraId = {{novaQuadra.response.body.id}}
+
+### Detalhar a quadra criada
+GET {{base}}/quadras/{{quadraId}}
+Authorization: Bearer {{token}}
+
+### Editar a quadra criada
+PUT {{base}}/quadras/{{quadraId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Quadra 1 Coberta",
+  "localizacao": "Bloco A",
+  "duracaoSessaoMin": 30,
+  "horarios": [
+    { "diaSemana": 2, "inicio": "07:00", "fim": "22:00" }
+  ]
+}
+
+### Remover a quadra criada
+DELETE {{base}}/quadras/{{quadraId}}
+Authorization: Bearer {{token}}
+
+### Erro esperado: sem token (401)
+GET {{base}}/quadras
+
+### Erro esperado: horários que se sobrepõem (400)
+POST {{base}}/quadras
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Quadra Teste",
+  "localizacao": "Bloco B",
+  "duracaoSessaoMin": 60,
+  "horarios": [
+    { "diaSemana": 2, "inicio": "08:00", "fim": "12:00" },
+    { "diaSemana": 2, "inicio": "11:00", "fim": "14:00" }
+  ]
+}
