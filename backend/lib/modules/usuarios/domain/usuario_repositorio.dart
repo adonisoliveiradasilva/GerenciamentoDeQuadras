@@ -17,7 +17,12 @@ abstract interface class UsuarioRepositorio {
 
   Future<Usuario> criar(NovoUsuario dados);
 
-  Future<Usuario?> atualizar(int id, AlteracaoUsuario dados, {Perfil? perfil});
+  Future<Usuario?> atualizar(
+    int id,
+    AlteracaoUsuario dados, {
+    Perfil? perfil,
+    String? novaSenhaHash,
+  });
 
   Future<bool> definirSenha(int id, String senhaHash);
 

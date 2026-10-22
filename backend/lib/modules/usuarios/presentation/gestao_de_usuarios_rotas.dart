@@ -15,6 +15,7 @@ import 'usuario_json.dart';
 Handler criarRotasDeGestaoDeUsuarios({
   required GestaoDeUsuarios gestao,
   required ServicoDeToken servicoDeToken,
+  bool comSenha = false,
 }) {
   final soGerente = const Pipeline()
       .addMiddleware(exigirLogin(servicoDeToken))
@@ -42,10 +43,13 @@ Handler criarRotasDeGestaoDeUsuarios({
         ..post(
           '/',
           soGerente.addHandler((Request requisicao) async {
-            final dados = lerDadosDoUsuario(
+            final (:dados, :senha) = lerDadosDoUsuario(
               LeitorDeCampos(await requisicao.lerJson()),
+              senha: comSenha
+                  ? ExigenciaDeSenha.obrigatoria
+                  : ExigenciaDeSenha.nenhuma,
             );
-            final usuario = await gestao.cadastrar(dados);
+            final usuario = await gestao.cadastrar(dados, senha: senha);
             return Respostas.criado(usuario.toJson());
           }),
         )
@@ -53,10 +57,13 @@ Handler criarRotasDeGestaoDeUsuarios({
           '/<id>',
           soGerente.addHandler((Request requisicao) async {
             final id = requisicao.idDaRota();
-            final dados = lerDadosDoUsuario(
+            final (:dados, :senha) = lerDadosDoUsuario(
               LeitorDeCampos(await requisicao.lerJson()),
+              senha: comSenha
+                  ? ExigenciaDeSenha.opcional
+                  : ExigenciaDeSenha.nenhuma,
             );
-            final usuario = await gestao.atualizar(id, dados);
+            final usuario = await gestao.atualizar(id, dados, novaSenha: senha);
             return Respostas.ok(usuario.toJson());
           }),
         )

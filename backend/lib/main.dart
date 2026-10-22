@@ -47,8 +47,24 @@ Future<void> main() async {
       (
         prefixo: '/clientes',
         rotas: criarRotasDeGestaoDeUsuarios(
-          gestao: GestaoDeUsuarios(usuarios, perfil: Perfil.cliente),
+          gestao: GestaoDeUsuarios(
+            usuarios,
+            perfil: Perfil.cliente,
+            hashDeSenha: hashDeSenha,
+          ),
           servicoDeToken: servicoDeToken,
+        ),
+      ),
+      (
+        prefixo: '/funcionarios',
+        rotas: criarRotasDeGestaoDeUsuarios(
+          gestao: GestaoDeUsuarios(
+            usuarios,
+            perfil: Perfil.funcionario,
+            hashDeSenha: hashDeSenha,
+          ),
+          servicoDeToken: servicoDeToken,
+          comSenha: true,
         ),
       ),
     ],

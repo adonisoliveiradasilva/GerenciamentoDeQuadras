@@ -1,3 +1,4 @@
+import '../../../core/auth/hash_de_senha.dart';
 import '../../../core/paginacao/paginacao.dart';
 import 'erros_usuario.dart';
 import 'perfil.dart';
@@ -5,9 +6,14 @@ import 'usuario.dart';
 import 'usuario_repositorio.dart';
 
 class GestaoDeUsuarios {
-  GestaoDeUsuarios(this._usuarios, {required this.perfil});
+  GestaoDeUsuarios(
+    this._usuarios, {
+    required this.perfil,
+    required this._hashDeSenha,
+  });
 
   final UsuarioRepositorio _usuarios;
+  final HashDeSenha _hashDeSenha;
   final Perfil perfil;
 
   Future<Pagina<Usuario>> listar(ParametrosPaginacao parametros) =>
@@ -17,7 +23,7 @@ class GestaoDeUsuarios {
       await _usuarios.buscarPorId(id, perfil: perfil) ??
       (throw UsuarioNaoEncontrado(perfil));
 
-  Future<Usuario> cadastrar(AlteracaoUsuario dados) async {
+  Future<Usuario> cadastrar(AlteracaoUsuario dados, {String? senha}) async {
     if (await _usuarios.buscarPorEmail(dados.email) != null) {
       throw const EmailJaCadastrado();
     }
@@ -28,6 +34,7 @@ class GestaoDeUsuarios {
       perfil: perfil,
       telefone: dados.telefone,
       dataNascimento: dados.dataNascimento,
+      senhaHash: senha == null ? null : await _hashDeSenha.gerar(senha),
     );
 
     final removido = await _usuarios.buscarRemovidoPorEmail(dados.email);
@@ -38,8 +45,19 @@ class GestaoDeUsuarios {
     return _usuarios.criar(novo);
   }
 
-  Future<Usuario> atualizar(int id, AlteracaoUsuario dados) async =>
-      await _usuarios.atualizar(id, dados, perfil: perfil) ??
+  Future<Usuario> atualizar(
+    int id,
+    AlteracaoUsuario dados, {
+    String? novaSenha,
+  }) async =>
+      await _usuarios.atualizar(
+        id,
+        dados,
+        perfil: perfil,
+        novaSenhaHash: novaSenha == null
+            ? null
+            : await _hashDeSenha.gerar(novaSenha),
+      ) ??
       (throw UsuarioNaoEncontrado(perfil));
 
   Future<void> remover(int id) async {
