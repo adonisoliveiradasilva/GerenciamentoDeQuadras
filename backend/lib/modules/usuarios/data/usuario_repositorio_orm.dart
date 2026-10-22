@@ -39,6 +39,33 @@ class UsuarioRepositorioOrm implements UsuarioRepositorio {
   }
 
   @override
+  Future<Usuario?> buscarRemovidoPorEmail(String email) async {
+    final linha = await _db.usuario
+        .where((u) => u.ativo.eq(false))
+        .where((u) => u.email.eq(email.toLowerCase()))
+        .firstOrNull();
+    return linha?._paraDominio();
+  }
+
+  @override
+  Future<Usuario?> reativar(int id, NovoUsuario dados) async {
+    final alterados = await _db.usuario
+        .where((u) => u.ativo.eq(false))
+        .where((u) => u.id.eq(id))
+        .patch(
+          ativo: .set(true),
+          nome: .set(dados.nome),
+          email: .set(dados.email.toLowerCase()),
+          perfil: .set(dados.perfil),
+          senhaHash: .set(dados.senhaHash),
+          telefone: .set(dados.telefone),
+          dataNascimento: .set(_paraData(dados.dataNascimento)),
+          atualizadoEm: .set(DateTime.now().toUtc()),
+        );
+    return alterados == 0 ? null : buscarPorId(id);
+  }
+
+  @override
   Future<Pagina<Usuario>> listar(
     Perfil perfil,
     ParametrosPaginacao parametros,

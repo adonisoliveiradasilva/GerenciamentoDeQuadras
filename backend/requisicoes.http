@@ -90,3 +90,42 @@ Content-Type: application/json
     { "diaSemana": 2, "inicio": "11:00", "fim": "14:00" }
   ]
 }
+
+### Listar clientes (só gerente)
+GET {{base}}/clientes?pagina=1&tamanho=10&busca=&ordenar=nome
+Authorization: Bearer {{token}}
+
+### Cadastrar cliente
+# @name novoCliente
+POST {{base}}/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Ana Souza",
+  "email": "ana@email.com",
+  "telefone": "(31) 99999-0000",
+  "dataNascimento": "2001-05-17"
+}
+
+###
+@clienteId = {{novoCliente.response.body.id}}
+
+### Detalhar cliente
+GET {{base}}/clientes/{{clienteId}}
+Authorization: Bearer {{token}}
+
+### Editar cliente
+PUT {{base}}/clientes/{{clienteId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Ana Souza Lima",
+  "email": "ana@email.com",
+  "telefone": "31988887777"
+}
+
+### Remover cliente
+DELETE {{base}}/clientes/{{clienteId}}
+Authorization: Bearer {{token}}

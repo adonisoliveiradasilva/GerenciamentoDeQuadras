@@ -13,6 +13,8 @@ import 'modules/quadras/data/quadra_repositorio_orm.dart';
 import 'modules/quadras/domain/servico_de_quadras.dart';
 import 'modules/quadras/presentation/quadras_rotas.dart';
 import 'modules/usuarios/data/usuario_repositorio_orm.dart';
+import 'modules/usuarios/domain/gestao_de_usuarios.dart';
+import 'modules/usuarios/presentation/gestao_de_usuarios_rotas.dart';
 
 Future<void> main() async {
   final ambiente = Ambiente.atual;
@@ -39,6 +41,13 @@ Future<void> main() async {
         prefixo: '/quadras',
         rotas: criarRotasDeQuadras(
           servico: ServicoDeQuadras(QuadraRepositorioOrm(banco)),
+          servicoDeToken: servicoDeToken,
+        ),
+      ),
+      (
+        prefixo: '/clientes',
+        rotas: criarRotasDeGestaoDeUsuarios(
+          gestao: GestaoDeUsuarios(usuarios, perfil: Perfil.cliente),
           servicoDeToken: servicoDeToken,
         ),
       ),

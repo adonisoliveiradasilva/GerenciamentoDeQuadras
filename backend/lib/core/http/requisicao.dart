@@ -39,6 +39,7 @@ class LeitorDeCampos {
   LeitorDeCampos._doItem(this._dados, this._prefixo, this._erros);
 
   static final _formatoEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+  static final _formatoData = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
 
   final Map<String, Object?> _dados;
   final String _prefixo;
@@ -142,6 +143,37 @@ class LeitorDeCampos {
     return itens;
   }
 
+  DateTime? data(
+    String campo, {
+    bool obrigatorio = true,
+    DateTime? minima,
+    DateTime? maxima,
+  }) {
+    final texto = this.texto(campo, obrigatorio: obrigatorio, maximo: 10);
+    if (texto == null) return null;
+    final partes = _formatoData.firstMatch(texto);
+    final data = partes == null
+        ? null
+        : DateTime.utc(
+            int.parse(partes[1]!),
+            int.parse(partes[2]!),
+            int.parse(partes[3]!),
+          );
+    if (data == null || _formatarData(data) != texto) {
+      adicionarErro(campo, 'Use uma data válida no formato AAAA-MM-DD.');
+      return null;
+    }
+    if (minima != null && data.isBefore(minima)) {
+      adicionarErro(campo, 'Deve ser a partir de ${_formatarData(minima)}.');
+      return null;
+    }
+    if (maxima != null && data.isAfter(maxima)) {
+      adicionarErro(campo, 'Deve ser até ${_formatarData(maxima)}.');
+      return null;
+    }
+    return data;
+  }
+
   bool? booleano(String campo, {bool obrigatorio = true}) {
     final valor = _dados[campo];
     if (valor == null) {
@@ -161,3 +193,5 @@ class LeitorDeCampos {
     }
   }
 }
+
+String _formatarData(DateTime data) => data.toIso8601String().substring(0, 10);
