@@ -9,6 +9,10 @@ abstract interface class UsuarioRepositorio {
 
   Future<Usuario?> buscarPorEmail(String email);
 
+  Future<Usuario?> buscarRemovidoPorEmail(String email);
+
+  Future<Usuario?> reativar(int id, NovoUsuario dados);
+
   Future<Pagina<Usuario>> listar(Perfil perfil, ParametrosPaginacao parametros);
 
   Future<Usuario> criar(NovoUsuario dados);
