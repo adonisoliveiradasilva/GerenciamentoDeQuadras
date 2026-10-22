@@ -34,17 +34,20 @@ extension LeituraDaRequisicao on Request {
 }
 
 class LeitorDeCampos {
-  LeitorDeCampos(this._dados);
+  LeitorDeCampos(this._dados) : _prefixo = '', _erros = {};
+
+  LeitorDeCampos._doItem(this._dados, this._prefixo, this._erros);
 
   static final _formatoEmail = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   final Map<String, Object?> _dados;
-  final _erros = <String, String>{};
+  final String _prefixo;
+  final Map<String, String> _erros;
 
   Map<String, String> get erros => Map.unmodifiable(_erros);
 
   void adicionarErro(String campo, String mensagem) =>
-      _erros.putIfAbsent(campo, () => mensagem);
+      _erros.putIfAbsent('$_prefixo$campo', () => mensagem);
 
   String? texto(
     String campo, {
@@ -83,7 +86,12 @@ class LeitorDeCampos {
     return valor.toLowerCase();
   }
 
-  int? inteiro(String campo, {bool obrigatorio = true, int? minimo}) {
+  int? inteiro(
+    String campo, {
+    bool obrigatorio = true,
+    int? minimo,
+    int? maximo,
+  }) {
     final valor = _dados[campo];
     if (valor == null) {
       if (obrigatorio) adicionarErro(campo, 'Campo obrigatório.');
@@ -97,7 +105,41 @@ class LeitorDeCampos {
       adicionarErro(campo, 'Deve ser maior ou igual a $minimo.');
       return null;
     }
+    if (maximo != null && valor > maximo) {
+      adicionarErro(campo, 'Deve ser menor ou igual a $maximo.');
+      return null;
+    }
     return valor;
+  }
+
+  List<LeitorDeCampos>? listaDeObjetos(
+    String campo, {
+    bool obrigatorio = true,
+    int? maximo,
+  }) {
+    final valor = _dados[campo];
+    if (valor == null) {
+      if (obrigatorio) adicionarErro(campo, 'Campo obrigatório.');
+      return null;
+    }
+    if (valor is! List) {
+      adicionarErro(campo, 'Deve ser uma lista.');
+      return null;
+    }
+    if (maximo != null && valor.length > maximo) {
+      adicionarErro(campo, 'Deve ter no máximo $maximo itens.');
+      return null;
+    }
+    final itens = <LeitorDeCampos>[];
+    for (var i = 0; i < valor.length; i++) {
+      final item = valor[i];
+      if (item is! Map<String, Object?>) {
+        adicionarErro('$campo[$i]', 'Deve ser um objeto.');
+        continue;
+      }
+      itens.add(LeitorDeCampos._doItem(item, '$_prefixo$campo[$i].', _erros));
+    }
+    return itens;
   }
 
   bool? booleano(String campo, {bool obrigatorio = true}) {
