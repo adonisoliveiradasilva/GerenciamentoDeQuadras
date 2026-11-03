@@ -7,13 +7,19 @@ import '../../../core/http/erros.dart';
 import '../../../core/http/requisicao.dart';
 import '../../../core/http/respostas.dart';
 import '../../usuarios/domain/usuario_repositorio.dart';
+import '../../usuarios/presentation/dados_do_usuario_dto.dart';
 import '../../usuarios/presentation/usuario_json.dart';
+import '../domain/cadastro_de_cliente.dart';
 import '../domain/fazer_login.dart';
+import '../domain/servico_de_senhas.dart';
+import 'pagina_definir_senha.dart';
 
 Handler criarRotasDeAuth({
   required FazerLogin fazerLogin,
   required UsuarioRepositorio usuarios,
   required ServicoDeToken servicoDeToken,
+  required CadastroDeCliente cadastroDeCliente,
+  required ServicoDeSenhas servicoDeSenhas,
 }) {
   final autenticado = const Pipeline().addMiddleware(
     exigirLogin(servicoDeToken),
@@ -50,6 +56,41 @@ Handler criarRotasDeAuth({
             }
             return Respostas.ok(usuario.toJson());
           }),
-        ))
+        )
+        ..post('/cadastro', (Request requisicao) async {
+          final campos = LeitorDeCampos(await requisicao.lerJson());
+          final (:dados, senha: _) = lerDadosDoUsuario(campos);
+          await cadastroDeCliente.executar(dados);
+          return Respostas.criado({
+            'mensagem':
+                'Enviamos um email para ${dados.email} com o link para '
+                'criar a sua senha.',
+          });
+        })
+        ..post('/esqueci-senha', (Request requisicao) async {
+          final campos = LeitorDeCampos(await requisicao.lerJson());
+          final email = campos.email('email');
+          campos.validar();
+          await servicoDeSenhas.solicitarRedefinicao(email!);
+          return Respostas.ok({
+            'mensagem':
+                'Se o email estiver cadastrado, você receberá um link para '
+                'definir uma nova senha.',
+          });
+        })
+        ..get(
+          '/definir-senha',
+          (Request _) => Respostas.html(paginaDefinirSenha),
+        )
+        ..post('/definir-senha', (Request requisicao) async {
+          final campos = LeitorDeCampos(await requisicao.lerJson());
+          final token = campos.texto('token', maximo: 200);
+          final senha = lerNovaSenha(campos, obrigatoria: true);
+          campos.validar();
+          await servicoDeSenhas.definirSenha(token: token!, novaSenha: senha!);
+          return Respostas.ok({
+            'mensagem': 'Senha definida. Você já pode fazer login.',
+          });
+        }))
       .call;
 }

@@ -18,6 +18,33 @@ Content-Type: application/json
 ###
 @token = {{login.response.body.token}}
 
+### Criar conta de cliente (envia email para criar a senha; veja em http://localhost:8025)
+POST {{base}}/auth/cadastro
+Content-Type: application/json
+
+{
+  "nome": "Lucas Pereira",
+  "email": "lucas@email.com"
+}
+
+### Esqueci a senha (responde 200 mesmo se o email não existir)
+POST {{base}}/auth/esqueci-senha
+Content-Type: application/json
+
+{
+  "email": "lucas@email.com"
+}
+
+### Definir senha com o código do link do email
+POST {{base}}/auth/definir-senha
+Content-Type: application/json
+
+{
+  "token": "cole-aqui-o-codigo-que-veio-no-link",
+  "senha": "minhaSenha123",
+  "confirmarSenha": "minhaSenha123"
+}
+
 ### Quem sou eu
 GET {{base}}/auth/eu
 Authorization: Bearer {{token}}

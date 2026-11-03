@@ -122,13 +122,13 @@ packages:
     source: hosted
     version: "1.15.1"
   crypto:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: crypto
-      sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
+      sha256: e3626ae6270383c9e3a549f34c9e4cd26c09ae6a9adaab2bf4737a00340efdc4
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.7"
+    version: "3.0.8"
   dart_jsonwebtoken:
     dependency: "direct main"
     description:
@@ -217,6 +217,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  intl:
+    dependency: transitive
+    description:
+      name: intl
+      sha256: "1ca20c894b1717686a2319b8548763d812bc0aabdac580420a44c5178c57a867"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.20.3"
   io:
     dependency: transitive
     description:
@@ -241,6 +249,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.0"
+  mailer:
+    dependency: "direct main"
+    description:
+      name: mailer
+      sha256: "56824d48355d6d0d48abbdd33c499ad26cda12ec64f6d0361f5ba7a6c4ac27b6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.2.2"
   matcher:
     dependency: transitive
     description:
@@ -361,6 +377,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.1"
+  punycoder:
+    dependency: transitive
+    description:
+      name: punycoder
+      sha256: "982734df864d9588eb13e28ac1c5a46b57e22117b3696032ac58739966cec190"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
   record_use:
     dependency: transitive
     description:
@@ -513,6 +537,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  unorm_dart:
+    dependency: transitive
+    description:
+      name: unorm_dart
+      sha256: b4f4d2aff27d65a5fc37f400d4c09e55d7535359315acbe3b895a9add4de3a23
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.3"
   vm_service:
     dependency: transitive
     description:

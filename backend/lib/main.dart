@@ -7,7 +7,11 @@ import 'core/auth/hash_de_senha.dart';
 import 'core/auth/servico_de_token.dart';
 import 'core/config/ambiente.dart';
 import 'core/database/database.dart';
+import 'core/email/enviador_de_email_smtp.dart';
+import 'modules/auth/data/token_de_senha_repositorio_orm.dart';
+import 'modules/auth/domain/cadastro_de_cliente.dart';
 import 'modules/auth/domain/fazer_login.dart';
+import 'modules/auth/domain/servico_de_senhas.dart';
 import 'modules/auth/presentation/auth_rotas.dart';
 import 'modules/quadras/data/quadra_repositorio_orm.dart';
 import 'modules/quadras/domain/servico_de_quadras.dart';
@@ -23,6 +27,25 @@ Future<void> main() async {
   const hashDeSenha = HashDeSenhaBcrypt();
   final usuarios = UsuarioRepositorioOrm(banco);
 
+  final servicoDeSenhas = ServicoDeSenhas(
+    usuarios: usuarios,
+    tokens: TokenDeSenhaRepositorioOrm(banco),
+    hashDeSenha: hashDeSenha,
+    enviador: EnviadorDeEmailSmtp.doAmbiente(ambiente),
+    urlPublica: ambiente.urlPublica,
+  );
+  final clientes = GestaoDeUsuarios(
+    usuarios,
+    perfil: Perfil.cliente,
+    hashDeSenha: hashDeSenha,
+    convites: servicoDeSenhas,
+  );
+  final funcionarios = GestaoDeUsuarios(
+    usuarios,
+    perfil: Perfil.funcionario,
+    hashDeSenha: hashDeSenha,
+  );
+
   final app = criarApp(
     modulos: [
       (
@@ -35,6 +58,12 @@ Future<void> main() async {
           ),
           usuarios: usuarios,
           servicoDeToken: servicoDeToken,
+          cadastroDeCliente: CadastroDeCliente(
+            usuarios: usuarios,
+            clientes: clientes,
+            convites: servicoDeSenhas,
+          ),
+          servicoDeSenhas: servicoDeSenhas,
         ),
       ),
       (
@@ -47,22 +76,14 @@ Future<void> main() async {
       (
         prefixo: '/clientes',
         rotas: criarRotasDeGestaoDeUsuarios(
-          gestao: GestaoDeUsuarios(
-            usuarios,
-            perfil: Perfil.cliente,
-            hashDeSenha: hashDeSenha,
-          ),
+          gestao: clientes,
           servicoDeToken: servicoDeToken,
         ),
       ),
       (
         prefixo: '/funcionarios',
         rotas: criarRotasDeGestaoDeUsuarios(
-          gestao: GestaoDeUsuarios(
-            usuarios,
-            perfil: Perfil.funcionario,
-            hashDeSenha: hashDeSenha,
-          ),
+          gestao: funcionarios,
           servicoDeToken: servicoDeToken,
           comSenha: true,
         ),

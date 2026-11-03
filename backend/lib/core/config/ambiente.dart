@@ -46,6 +46,24 @@ class Ambiente {
         (throw StateError('Variável de ambiente $chave deve ser um número.'));
   }
 
+  bool booleano(String chave, {required bool padrao}) {
+    final valor = opcional(chave)?.toLowerCase();
+    return switch (valor) {
+      null => padrao,
+      'true' || '1' || 'sim' => true,
+      'false' || '0' || 'nao' || 'não' => false,
+      _ => throw StateError(
+        'Variável de ambiente $chave deve ser true ou false.',
+      ),
+    };
+  }
+
+  Uri get urlPublica {
+    final valor = opcional('URL_PUBLICA') ?? 'http://localhost:$porta';
+    return Uri.tryParse(valor.replaceAll(RegExp(r'/+$'), '')) ??
+        (throw StateError('URL_PUBLICA não é uma URL válida.'));
+  }
+
   Uri get urlBanco {
     final valor = obrigatorio('DATABASE_URL');
     return Uri.tryParse(valor) ??
