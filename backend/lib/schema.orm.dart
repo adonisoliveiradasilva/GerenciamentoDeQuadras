@@ -2,7 +2,11 @@
 
 import 'package:orm/sql.dart';
 export "package:backend/modules/usuarios/domain/perfil.dart" show Perfil;
+export "package:backend/modules/auth/domain/tipo_de_token_de_senha.dart"
+    show TipoDeTokenDeSenha;
 import "package:backend/modules/usuarios/domain/perfil.dart" as types0;
+import "package:backend/modules/auth/domain/tipo_de_token_de_senha.dart"
+    as types1;
 
 /// A complete immutable row from "horarios_funcionamento".
 final class HorarioFuncionamento({
@@ -354,6 +358,187 @@ extension QuadraUpdates on Query<Quadra, QuadraFields> {
   ).execute();
 }
 
+/// A complete immutable row from "tokens_senha".
+final class TokenDeSenha({
+  required final int id,
+  required final int usuarioId,
+  required final String tokenHash,
+  required final types1.TipoDeTokenDeSenha tipo,
+  required final DateTime expiraEm,
+  required final DateTime? usadoEm,
+  required final DateTime criadoEm,
+});
+final _tokenDeSenhaId = Column<int>(
+  "id",
+  Codecs.integer,
+  nullable: false,
+  generated: true,
+);
+final _tokenDeSenhaUsuarioId = Column<int>(
+  "usuario_id",
+  Codecs.integer,
+  nullable: false,
+  generated: false,
+);
+final _tokenDeSenhaTokenHash = Column<String>(
+  "token_hash",
+  Codecs.text,
+  nullable: false,
+  generated: false,
+);
+final _tokenDeSenhaTipo = Column<types1.TipoDeTokenDeSenha>(
+  "tipo",
+  Codecs.enumeration<types1.TipoDeTokenDeSenha>({
+    types1.TipoDeTokenDeSenha.criar: "criar",
+    types1.TipoDeTokenDeSenha.redefinir: "redefinir",
+  }),
+  nullable: false,
+  generated: false,
+);
+final _tokenDeSenhaExpiraEm = Column<DateTime>(
+  "expira_em",
+  Codecs.dateTime,
+  nullable: false,
+  generated: false,
+);
+final _tokenDeSenhaUsadoEm = Column<DateTime?>(
+  "usado_em",
+  Codecs.dateTime.nullable(),
+  nullable: true,
+  generated: false,
+);
+final _tokenDeSenhaCriadoEm = Column<DateTime>(
+  "criado_em",
+  Codecs.dateTime,
+  nullable: false,
+  generated: false,
+  defaultSql: "CURRENT_TIMESTAMP",
+);
+final tokenDeSenhaSchema = TableSchema(
+  "tokens_senha",
+  namespace: "public",
+  columns: [
+    _tokenDeSenhaId,
+    _tokenDeSenhaUsuarioId,
+    _tokenDeSenhaTokenHash,
+    _tokenDeSenhaTipo,
+    _tokenDeSenhaExpiraEm,
+    _tokenDeSenhaUsadoEm,
+    _tokenDeSenhaCriadoEm,
+  ],
+  primaryKey: ["id"],
+  uniqueKeys: [
+    ["token_hash"],
+  ],
+  indexes: [
+    IndexSchema("tokens_senha_usuario_tipo", [
+      "usuario_id",
+      "tipo",
+    ], unique: false),
+  ],
+  foreignKeys: [
+    ForeignKey(
+      ["usuario_id"],
+      "usuarios",
+      ["id"],
+      onDelete: "CASCADE",
+      targetNamespace: "public",
+    ),
+  ],
+);
+
+final class TokenDeSenhaFields extends Fields {
+  TokenDeSenhaFields(super.table);
+  late final id = column(_tokenDeSenhaId);
+  late final usuarioId = column(_tokenDeSenhaUsuarioId);
+  late final tokenHash = column(_tokenDeSenhaTokenHash);
+  late final tipo = column(_tokenDeSenhaTipo);
+  late final expiraEm = column(_tokenDeSenhaExpiraEm);
+  late final usadoEm = column(_tokenDeSenhaUsadoEm);
+  late final criadoEm = column(_tokenDeSenhaCriadoEm);
+  Relation<Usuario, UsuarioFields> get usuario =>
+      Relation(usuarioTable, parent: [usuarioId], child: (row) => [row.id]);
+}
+
+final tokenDeSenhaTable = Table<TokenDeSenha, TokenDeSenhaFields>(
+  tokenDeSenhaSchema,
+  TokenDeSenhaFields.new,
+  (row) =>
+      (
+        (row.id, row.usuarioId, row.tokenHash, row.tipo, row.expiraEm).map(
+          (id, usuarioId, tokenHash, tipo, expiraEm) => (
+            id: id,
+            usuarioId: usuarioId,
+            tokenHash: tokenHash,
+            tipo: tipo,
+            expiraEm: expiraEm,
+          ),
+        ),
+        (
+          row.usadoEm,
+          row.criadoEm,
+        ).map((usadoEm, criadoEm) => (usadoEm: usadoEm, criadoEm: criadoEm)),
+      ).map(
+        (left, right) => TokenDeSenha(
+          id: left.id,
+          usuarioId: left.usuarioId,
+          tokenHash: left.tokenHash,
+          tipo: left.tipo,
+          expiraEm: left.expiraEm,
+          usadoEm: right.usadoEm,
+          criadoEm: right.criadoEm,
+        ),
+      ),
+);
+
+final class TokenDeSenhaTableSet
+    extends TableSet<TokenDeSenha, TokenDeSenhaFields> {
+  TokenDeSenhaTableSet(QueryContext db) : super(db, tokenDeSenhaTable) {
+    db.registerSchema(appSchema);
+  }
+  Future<TokenDeSenha> create({
+    Change<int> id = const Change.keep(),
+    required int usuarioId,
+    required String tokenHash,
+    required types1.TipoDeTokenDeSenha tipo,
+    required DateTime expiraEm,
+    DateTime? usadoEm,
+    Change<DateTime> criadoEm = const Change.keep(),
+  }) => createRow(
+    (row) => [
+      ...row.id.change(id),
+      row.usuarioId.set(usuarioId),
+      row.tokenHash.set(tokenHash),
+      row.tipo.set(tipo),
+      row.expiraEm.set(expiraEm),
+      row.usadoEm.set(usadoEm),
+      ...row.criadoEm.change(criadoEm),
+    ],
+  );
+  Query<TokenDeSenha, TokenDeSenhaFields> byId(int id) =>
+      where((row) => row.id.eq(id));
+}
+
+extension TokenDeSenhaUpdates on Query<TokenDeSenha, TokenDeSenhaFields> {
+  Future<int> patch({
+    Change<int> usuarioId = const Change.keep(),
+    Change<String> tokenHash = const Change.keep(),
+    Change<types1.TipoDeTokenDeSenha> tipo = const Change.keep(),
+    Change<DateTime> expiraEm = const Change.keep(),
+    Change<DateTime?> usadoEm = const Change.keep(),
+    Change<DateTime> criadoEm = const Change.keep(),
+  }) => update(
+    (row) => [
+      ...row.usuarioId.change(usuarioId),
+      ...row.tokenHash.change(tokenHash),
+      ...row.tipo.change(tipo),
+      ...row.expiraEm.change(expiraEm),
+      ...row.usadoEm.change(usadoEm),
+      ...row.criadoEm.change(criadoEm),
+    ],
+  ).execute();
+}
+
 /// A complete immutable row from "usuarios".
 final class Usuario({
   required final int id,
@@ -579,6 +764,7 @@ extension UsuarioUpdates on Query<Usuario, UsuarioFields> {
 final appSchema = List<TableSchema>.unmodifiable([
   horarioFuncionamentoSchema,
   quadraSchema,
+  tokenDeSenhaSchema,
   usuarioSchema,
 ]);
 
@@ -586,5 +772,6 @@ extension AppTables on QueryContext {
   HorarioFuncionamentoTableSet get horarioFuncionamento =>
       HorarioFuncionamentoTableSet(this);
   QuadraTableSet get quadra => QuadraTableSet(this);
+  TokenDeSenhaTableSet get tokenDeSenha => TokenDeSenhaTableSet(this);
   UsuarioTableSet get usuario => UsuarioTableSet(this);
 }

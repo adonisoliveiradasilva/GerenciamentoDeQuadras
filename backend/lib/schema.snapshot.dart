@@ -57,6 +57,38 @@ final schema = SchemaSnapshot([
     checks: [CheckSchema("quadras_duracao_positiva", "duracao_sessao_min > 0")],
   ),
   TableSchema(
+    "tokens_senha",
+    namespace: "public",
+    columns: [
+      Column("id", Codecs.integer, generated: true),
+      Column("usuario_id", Codecs.integer),
+      Column("token_hash", Codecs.text),
+      Column("tipo", Codecs.text),
+      Column("expira_em", Codecs.dateTime),
+      Column("usado_em", Codecs.dateTime.nullable(), nullable: true),
+      Column("criado_em", Codecs.dateTime, defaultSql: "CURRENT_TIMESTAMP"),
+    ],
+    primaryKey: ["id"],
+    uniqueKeys: [
+      ["token_hash"],
+    ],
+    indexes: [
+      IndexSchema("tokens_senha_usuario_tipo", [
+        "usuario_id",
+        "tipo",
+      ], unique: false),
+    ],
+    foreignKeys: [
+      ForeignKey(
+        ["usuario_id"],
+        "usuarios",
+        ["id"],
+        onDelete: "CASCADE",
+        targetNamespace: "public",
+      ),
+    ],
+  ),
+  TableSchema(
     "usuarios",
     namespace: "public",
     columns: [
