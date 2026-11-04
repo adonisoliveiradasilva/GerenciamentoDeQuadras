@@ -4,6 +4,239 @@ import 'package:orm/sql.dart';
 export "package:backend/modules/usuarios/domain/perfil.dart" show Perfil;
 import "package:backend/modules/usuarios/domain/perfil.dart" as types0;
 
+/// A complete immutable row from "agendamentos".
+final class Agendamento({
+  required final int id,
+  required final int quadraId,
+  required final int clienteId,
+  required final DateTime dataInicio,
+  required final DateTime dataFim,
+  required final String status,
+  required final double valorTotal,
+  required final DateTime criadoEm,
+  required final DateTime atualizadoEm,
+});
+final _agendamentoId = Column<int>(
+  "id",
+  Codecs.integer,
+  nullable: false,
+  generated: true,
+);
+final _agendamentoQuadraId = Column<int>(
+  "quadra_id",
+  Codecs.integer,
+  nullable: false,
+  generated: false,
+);
+final _agendamentoClienteId = Column<int>(
+  "cliente_id",
+  Codecs.integer,
+  nullable: false,
+  generated: false,
+);
+final _agendamentoDataInicio = Column<DateTime>(
+  "data_inicio",
+  Codecs.dateTime,
+  nullable: false,
+  generated: false,
+);
+final _agendamentoDataFim = Column<DateTime>(
+  "data_fim",
+  Codecs.dateTime,
+  nullable: false,
+  generated: false,
+);
+final _agendamentoStatus = Column<String>(
+  "status",
+  Codecs.text,
+  nullable: false,
+  generated: false,
+  defaultSql: "'''pendente'''",
+);
+final _agendamentoValorTotal = Column<double>(
+  "valor_total",
+  Codecs.real,
+  nullable: false,
+  generated: false,
+);
+final _agendamentoCriadoEm = Column<DateTime>(
+  "criado_em",
+  Codecs.dateTime,
+  nullable: false,
+  generated: false,
+  defaultSql: "CURRENT_TIMESTAMP",
+);
+final _agendamentoAtualizadoEm = Column<DateTime>(
+  "atualizado_em",
+  Codecs.dateTime,
+  nullable: false,
+  generated: false,
+  defaultSql: "CURRENT_TIMESTAMP",
+);
+final agendamentoSchema = TableSchema(
+  "agendamentos",
+  namespace: "public",
+  columns: [
+    _agendamentoId,
+    _agendamentoQuadraId,
+    _agendamentoClienteId,
+    _agendamentoDataInicio,
+    _agendamentoDataFim,
+    _agendamentoStatus,
+    _agendamentoValorTotal,
+    _agendamentoCriadoEm,
+    _agendamentoAtualizadoEm,
+  ],
+  primaryKey: ["id"],
+  uniqueKeys: [],
+  indexes: [
+    IndexSchema("agendamentos_quadra_datas", [
+      "quadra_id",
+      "data_inicio",
+      "data_fim",
+    ], unique: false),
+    IndexSchema("agendamentos_cliente_status", [
+      "cliente_id",
+      "status",
+    ], unique: false),
+  ],
+  checks: [
+    CheckSchema.forDialects(
+      "agendamentos_inicio_antes_do_fim",
+      sqlite: "data_inicio < data_fim",
+      postgres: "data_inicio < data_fim",
+      mysql: "data_inicio < data_fim",
+      mariadb: "data_inicio < data_fim",
+    ),
+  ],
+  foreignKeys: [
+    ForeignKey(
+      ["quadra_id"],
+      "quadras",
+      ["id"],
+      onDelete: "CASCADE",
+      targetNamespace: "public",
+    ),
+    ForeignKey(
+      ["cliente_id"],
+      "usuarios",
+      ["id"],
+      onDelete: "CASCADE",
+      targetNamespace: "public",
+    ),
+  ],
+);
+
+final class AgendamentoFields extends Fields {
+  AgendamentoFields(super.table);
+  late final id = column(_agendamentoId);
+  late final quadraId = column(_agendamentoQuadraId);
+  late final clienteId = column(_agendamentoClienteId);
+  late final dataInicio = column(_agendamentoDataInicio);
+  late final dataFim = column(_agendamentoDataFim);
+  late final status = column(_agendamentoStatus);
+  late final valorTotal = column(_agendamentoValorTotal);
+  late final criadoEm = column(_agendamentoCriadoEm);
+  late final atualizadoEm = column(_agendamentoAtualizadoEm);
+  Relation<Quadra, QuadraFields> get quadra =>
+      Relation(quadraTable, parent: [quadraId], child: (row) => [row.id]);
+  Relation<Usuario, UsuarioFields> get cliente =>
+      Relation(usuarioTable, parent: [clienteId], child: (row) => [row.id]);
+}
+
+final agendamentoTable = Table<Agendamento, AgendamentoFields>(
+  agendamentoSchema,
+  AgendamentoFields.new,
+  (row) =>
+      (
+        (row.id, row.quadraId, row.clienteId, row.dataInicio, row.dataFim).map(
+          (id, quadraId, clienteId, dataInicio, dataFim) => (
+            id: id,
+            quadraId: quadraId,
+            clienteId: clienteId,
+            dataInicio: dataInicio,
+            dataFim: dataFim,
+          ),
+        ),
+        (row.status, row.valorTotal, row.criadoEm, row.atualizadoEm).map(
+          (status, valorTotal, criadoEm, atualizadoEm) => (
+            status: status,
+            valorTotal: valorTotal,
+            criadoEm: criadoEm,
+            atualizadoEm: atualizadoEm,
+          ),
+        ),
+      ).map(
+        (left, right) => Agendamento(
+          id: left.id,
+          quadraId: left.quadraId,
+          clienteId: left.clienteId,
+          dataInicio: left.dataInicio,
+          dataFim: left.dataFim,
+          status: right.status,
+          valorTotal: right.valorTotal,
+          criadoEm: right.criadoEm,
+          atualizadoEm: right.atualizadoEm,
+        ),
+      ),
+);
+
+final class AgendamentoTableSet
+    extends TableSet<Agendamento, AgendamentoFields> {
+  AgendamentoTableSet(QueryContext db) : super(db, agendamentoTable) {
+    db.registerSchema(appSchema);
+  }
+  Future<Agendamento> create({
+    Change<int> id = const Change.keep(),
+    required int quadraId,
+    required int clienteId,
+    required DateTime dataInicio,
+    required DateTime dataFim,
+    Change<String> status = const Change.keep(),
+    required double valorTotal,
+    Change<DateTime> criadoEm = const Change.keep(),
+    Change<DateTime> atualizadoEm = const Change.keep(),
+  }) => createRow(
+    (row) => [
+      ...row.id.change(id),
+      row.quadraId.set(quadraId),
+      row.clienteId.set(clienteId),
+      row.dataInicio.set(dataInicio),
+      row.dataFim.set(dataFim),
+      ...row.status.change(status),
+      row.valorTotal.set(valorTotal),
+      ...row.criadoEm.change(criadoEm),
+      ...row.atualizadoEm.change(atualizadoEm),
+    ],
+  );
+  Query<Agendamento, AgendamentoFields> byId(int id) =>
+      where((row) => row.id.eq(id));
+}
+
+extension AgendamentoUpdates on Query<Agendamento, AgendamentoFields> {
+  Future<int> patch({
+    Change<int> quadraId = const Change.keep(),
+    Change<int> clienteId = const Change.keep(),
+    Change<DateTime> dataInicio = const Change.keep(),
+    Change<DateTime> dataFim = const Change.keep(),
+    Change<String> status = const Change.keep(),
+    Change<double> valorTotal = const Change.keep(),
+    Change<DateTime> criadoEm = const Change.keep(),
+    Change<DateTime> atualizadoEm = const Change.keep(),
+  }) => update(
+    (row) => [
+      ...row.quadraId.change(quadraId),
+      ...row.clienteId.change(clienteId),
+      ...row.dataInicio.change(dataInicio),
+      ...row.dataFim.change(dataFim),
+      ...row.status.change(status),
+      ...row.valorTotal.change(valorTotal),
+      ...row.criadoEm.change(criadoEm),
+      ...row.atualizadoEm.change(atualizadoEm),
+    ],
+  ).execute();
+}
+
 /// A complete immutable row from "horarios_funcionamento".
 final class HorarioFuncionamento({
   required final int id,
@@ -264,6 +497,8 @@ final class QuadraFields extends Fields {
         parent: [id],
         child: (row) => [row.quadraId],
       );
+  Relation<Agendamento, AgendamentoFields> get agendamentos =>
+      Relation(agendamentoTable, parent: [id], child: (row) => [row.quadraId]);
 }
 
 final quadraTable = Table<Quadra, QuadraFields>(
@@ -471,6 +706,8 @@ final class UsuarioFields extends Fields {
   late final ativo = column(_usuarioAtivo);
   late final criadoEm = column(_usuarioCriadoEm);
   late final atualizadoEm = column(_usuarioAtualizadoEm);
+  Relation<Agendamento, AgendamentoFields> get agendamentos =>
+      Relation(agendamentoTable, parent: [id], child: (row) => [row.clienteId]);
 }
 
 final usuarioTable = Table<Usuario, UsuarioFields>(
@@ -577,12 +814,14 @@ extension UsuarioUpdates on Query<Usuario, UsuarioFields> {
 }
 
 final appSchema = List<TableSchema>.unmodifiable([
+  agendamentoSchema,
   horarioFuncionamentoSchema,
   quadraSchema,
   usuarioSchema,
 ]);
 
 extension AppTables on QueryContext {
+  AgendamentoTableSet get agendamento => AgendamentoTableSet(this);
   HorarioFuncionamentoTableSet get horarioFuncionamento =>
       HorarioFuncionamentoTableSet(this);
   QuadraTableSet get quadra => QuadraTableSet(this);
