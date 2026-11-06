@@ -5,7 +5,7 @@ import 'modules/usuarios/domain/perfil.dart';
 export 'modules/usuarios/domain/perfil.dart';
 
 final usuario = model(
-  'usuarios', 
+  'usuarios',
   (
     id: identity(),
     nome: text(),
@@ -17,7 +17,7 @@ final usuario = model(
     ativo: boolean(defaultValue: true),
     criadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
     atualizadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
-  ), 
+  ),
   indexes: (u) => [index((u.perfil, u.nome), name: 'usuarios_perfil_nome')],
   relations: (u) => (agendamentos: referencedBy(() => agendamento)),
 );
@@ -70,18 +70,22 @@ final Model agendamento = model(
     clienteId: integer(),
     dataInicio: dateTime(),
     dataFim: dateTime(),
-    status: text(defaultValue: "'pendente'"), 
+    status: text(defaultValue: 'pendente'),
     valorTotal: real(),
     criadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
     atualizadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
   ),
   indexes: (a) => [
-    index((a.quadraId, a.dataInicio, a.dataFim), name: 'agendamentos_quadra_datas'),
+    index((
+      a.quadraId,
+      a.dataInicio,
+      a.dataFim,
+    ), name: 'agendamentos_quadra_datas'),
     index((a.clienteId, a.status), name: 'agendamentos_cliente_status'),
   ],
   relations: (a) => (
-    quadra: references(a.quadraId, () => quadra, onDelete: .cascade),
-    cliente: references(a.clienteId, () => usuario, onDelete: .cascade),
+    quadra: references(a.quadraId, () => quadra),
+    cliente: references(a.clienteId, () => usuario),
   ),
   checks: [
     check('data_inicio < data_fim', name: 'agendamentos_inicio_antes_do_fim'),

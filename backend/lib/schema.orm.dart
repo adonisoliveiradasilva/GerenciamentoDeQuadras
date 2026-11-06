@@ -51,7 +51,7 @@ final _agendamentoStatus = Column<String>(
   Codecs.text,
   nullable: false,
   generated: false,
-  defaultSql: "'''pendente'''",
+  defaultSql: "'pendente'",
 );
 final _agendamentoValorTotal = Column<double>(
   "valor_total",
@@ -114,14 +114,14 @@ final agendamentoSchema = TableSchema(
       ["quadra_id"],
       "quadras",
       ["id"],
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
       targetNamespace: "public",
     ),
     ForeignKey(
       ["cliente_id"],
       "usuarios",
       ["id"],
-      onDelete: "CASCADE",
+      onDelete: "RESTRICT",
       targetNamespace: "public",
     ),
   ],
