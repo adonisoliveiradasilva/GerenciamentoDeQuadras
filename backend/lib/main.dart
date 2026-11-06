@@ -79,7 +79,7 @@ Future<void> main() async {
       ),
       (
         prefixo: '/agendamentos',
-        rotas: AgendamentosRotas(servicoDeAgendamentos).router,
+        rotas: AgendamentosRotas(servicoDeAgendamentos, servicoDeToken).router.call,
       ),
     ],
   );
