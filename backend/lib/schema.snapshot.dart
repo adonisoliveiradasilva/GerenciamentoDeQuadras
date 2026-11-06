@@ -3,6 +3,53 @@ import 'package:orm/migrate.dart';
 
 final schema = SchemaSnapshot([
   TableSchema(
+    "agendamentos",
+    namespace: "public",
+    columns: [
+      Column("id", Codecs.integer, generated: true),
+      Column("quadra_id", Codecs.integer),
+      Column("cliente_id", Codecs.integer),
+      Column("data_inicio", Codecs.dateTime),
+      Column("data_fim", Codecs.dateTime),
+      Column("status", Codecs.text, defaultSql: "'pendente'"),
+      Column("valor_total", Codecs.real),
+      Column("criado_em", Codecs.dateTime, defaultSql: "CURRENT_TIMESTAMP"),
+      Column("atualizado_em", Codecs.dateTime, defaultSql: "CURRENT_TIMESTAMP"),
+    ],
+    primaryKey: ["id"],
+
+    indexes: [
+      IndexSchema("agendamentos_quadra_datas", [
+        "quadra_id",
+        "data_inicio",
+        "data_fim",
+      ], unique: false),
+      IndexSchema("agendamentos_cliente_status", [
+        "cliente_id",
+        "status",
+      ], unique: false),
+    ],
+    foreignKeys: [
+      ForeignKey(
+        ["quadra_id"],
+        "quadras",
+        ["id"],
+        onDelete: "RESTRICT",
+        targetNamespace: "public",
+      ),
+      ForeignKey(
+        ["cliente_id"],
+        "usuarios",
+        ["id"],
+        onDelete: "RESTRICT",
+        targetNamespace: "public",
+      ),
+    ],
+    checks: [
+      CheckSchema("agendamentos_inicio_antes_do_fim", "data_inicio < data_fim"),
+    ],
+  ),
+  TableSchema(
     "horarios_funcionamento",
     namespace: "public",
     columns: [
