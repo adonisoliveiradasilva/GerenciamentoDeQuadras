@@ -1,20 +1,32 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
+import '../../../core/auth/middlewares_de_acesso.dart';
+import '../../../core/auth/servico_de_token.dart';
+import '../../usuarios/domain/perfil.dart';
 import '../domain/servico_de_agendamentos.dart';
 import 'dados_do_agendamento_dto.dart';
 
 class AgendamentosRotas {
   final ServicoDeAgendamentos _servico;
+  final ServicoDeToken _servicoDeToken;
 
-  AgendamentosRotas(this._servico);
+  AgendamentosRotas(this._servico, this._servicoDeToken);
 
   Router get router {
+    final logado = const Pipeline().addMiddleware(exigirLogin(_servicoDeToken));
+    final soCliente = logado.addMiddleware(exigirPerfis({Perfil.cliente}));
     final router = Router();
 
-    router.post('/', _criarAgendamento);
+    router.post('/', soCliente.addHandler(_criarAgendamento));
 
-    router.get('/livres/<quadraId>', _buscarHorariosLivres);
+    router.get(
+      '/livres/<quadraId>',
+      logado.addHandler(
+        (Request request) =>
+            _buscarHorariosLivres(request, request.params['quadraId']!),
+      ),
+    );
 
     return router;
   }
@@ -27,7 +39,7 @@ class AgendamentosRotas {
 
       final agendamento = await _servico.criarAgendamento(
         quadraId: dto.quadraId,
-        clienteId: dto.clienteId,
+        clienteId: request.usuarioAutenticado.id,
         dataInicio: dto.dataInicio,
         dataFim: dto.dataFim,
         valorTotal: dto.valorTotal,
