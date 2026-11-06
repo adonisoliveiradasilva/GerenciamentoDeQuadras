@@ -15,13 +15,23 @@ import 'modules/quadras/presentation/quadras_rotas.dart';
 import 'modules/usuarios/data/usuario_repositorio_orm.dart';
 import 'modules/usuarios/domain/gestao_de_usuarios.dart';
 import 'modules/usuarios/presentation/gestao_de_usuarios_rotas.dart';
+import 'modules/agendamentos/data/agendamento_repositorio_orm.dart';
+import 'modules/agendamentos/domain/servico_de_agendamentos.dart';
+import 'modules/agendamentos/presentation/agendamentos_rotas.dart';
 
 Future<void> main() async {
   final ambiente = Ambiente.atual;
   final banco = criarBancoDeDados(ambiente: ambiente);
   final servicoDeToken = ServicoDeToken.doAmbiente(ambiente);
   const hashDeSenha = HashDeSenhaBcrypt();
+  
+  // Repositórios instanciados
   final usuarios = UsuarioRepositorioOrm(banco);
+  final quadras = QuadraRepositorioOrm(banco);
+  final agendamentos = AgendamentoRepositorioORM(banco);
+
+  // Serviços instanciados
+  final servicoDeAgendamentos = ServicoDeAgendamentos(agendamentos, quadras);
 
   final app = criarApp(
     modulos: [
@@ -40,7 +50,7 @@ Future<void> main() async {
       (
         prefixo: '/quadras',
         rotas: criarRotasDeQuadras(
-          servico: ServicoDeQuadras(QuadraRepositorioOrm(banco)),
+          servico: ServicoDeQuadras(quadras),
           servicoDeToken: servicoDeToken,
         ),
       ),
@@ -66,6 +76,10 @@ Future<void> main() async {
           servicoDeToken: servicoDeToken,
           comSenha: true,
         ),
+      ),
+      (
+        prefixo: '/agendamentos',
+        rotas: AgendamentosRotas(servicoDeAgendamentos).router,
       ),
     ],
   );

@@ -4,18 +4,23 @@ import 'modules/usuarios/domain/perfil.dart';
 
 export 'modules/usuarios/domain/perfil.dart';
 
-final usuario = model('usuarios', (
-  id: identity(),
-  nome: text(),
-  email: text(unique: true),
-  senhaHash: text().nullable(),
-  telefone: text().nullable(),
-  dataNascimento: date().nullable(),
-  perfil: enumeration(Perfil.values),
-  ativo: boolean(defaultValue: true),
-  criadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
-  atualizadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
-), indexes: (u) => [index((u.perfil, u.nome), name: 'usuarios_perfil_nome')]);
+final usuario = model(
+  'usuarios', 
+  (
+    id: identity(),
+    nome: text(),
+    email: text(unique: true),
+    senhaHash: text().nullable(),
+    telefone: text().nullable(),
+    dataNascimento: date().nullable(),
+    perfil: enumeration(Perfil.values),
+    ativo: boolean(defaultValue: true),
+    criadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
+    atualizadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
+  ), 
+  indexes: (u) => [index((u.perfil, u.nome), name: 'usuarios_perfil_nome')],
+  relations: (u) => (agendamentos: referencedBy(() => agendamento)),
+);
 
 final Model quadra = model(
   'quadras',
@@ -30,7 +35,10 @@ final Model quadra = model(
     atualizadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
   ),
   indexes: (q) => [index((q.ativo, q.nome), name: 'quadras_ativo_nome')],
-  relations: (q) => (horarios: referencedBy(() => horarioFuncionamento)),
+  relations: (q) => (
+    horarios: referencedBy(() => horarioFuncionamento),
+    agendamentos: referencedBy(() => agendamento),
+  ),
   checks: [check('duracao_sessao_min > 0', name: 'quadras_duracao_positiva')],
 );
 
@@ -51,5 +59,31 @@ final Model horarioFuncionamento = model(
   checks: [
     check('dia_semana BETWEEN 1 AND 7', name: 'horarios_dia_valido'),
     check('inicio < fim', name: 'horarios_inicio_antes_do_fim'),
+  ],
+);
+
+final Model agendamento = model(
+  'agendamentos',
+  (
+    id: identity(),
+    quadraId: integer(),
+    clienteId: integer(),
+    dataInicio: dateTime(),
+    dataFim: dateTime(),
+    status: text(defaultValue: "'pendente'"), 
+    valorTotal: real(),
+    criadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
+    atualizadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
+  ),
+  indexes: (a) => [
+    index((a.quadraId, a.dataInicio, a.dataFim), name: 'agendamentos_quadra_datas'),
+    index((a.clienteId, a.status), name: 'agendamentos_cliente_status'),
+  ],
+  relations: (a) => (
+    quadra: references(a.quadraId, () => quadra, onDelete: .cascade),
+    cliente: references(a.clienteId, () => usuario, onDelete: .cascade),
+  ),
+  checks: [
+    check('data_inicio < data_fim', name: 'agendamentos_inicio_antes_do_fim'),
   ],
 );
