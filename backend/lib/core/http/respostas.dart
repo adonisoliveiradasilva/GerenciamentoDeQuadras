@@ -18,6 +18,11 @@ abstract final class Respostas {
 
   static Response semConteudo() => Response(204);
 
+  static Response html(String conteudo) => Response.ok(
+    conteudo,
+    headers: {'content-type': 'text/html; charset=utf-8'},
+  );
+
   static Response erro(ErroApi erro) =>
       json(erro.toJson(), status: erro.status);
 }

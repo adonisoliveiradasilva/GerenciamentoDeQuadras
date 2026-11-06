@@ -22,8 +22,8 @@ const _tamanhoMaximoDaSenha = 72;
   );
   final senhaLida = switch (senha) {
     ExigenciaDeSenha.nenhuma => null,
-    ExigenciaDeSenha.opcional => _lerSenha(campos, obrigatoria: false),
-    ExigenciaDeSenha.obrigatoria => _lerSenha(campos, obrigatoria: true),
+    ExigenciaDeSenha.opcional => lerNovaSenha(campos, obrigatoria: false),
+    ExigenciaDeSenha.obrigatoria => lerNovaSenha(campos, obrigatoria: true),
   };
   campos.validar();
 
@@ -49,7 +49,7 @@ String? lerTelefone(LeitorDeCampos campos, String campo) {
   return digitos;
 }
 
-String? _lerSenha(LeitorDeCampos campos, {required bool obrigatoria}) {
+String? lerNovaSenha(LeitorDeCampos campos, {required bool obrigatoria}) {
   final senha = campos.texto(
     'senha',
     obrigatorio: obrigatoria,

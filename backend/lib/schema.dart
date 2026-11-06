@@ -1,7 +1,9 @@
 import 'package:orm/schema.dart';
 
+import 'modules/auth/domain/tipo_de_token_de_senha.dart';
 import 'modules/usuarios/domain/perfil.dart';
 
+export 'modules/auth/domain/tipo_de_token_de_senha.dart';
 export 'modules/usuarios/domain/perfil.dart';
 
 final usuario = model(
@@ -90,4 +92,22 @@ final Model agendamento = model(
   checks: [
     check('data_inicio < data_fim', name: 'agendamentos_inicio_antes_do_fim'),
   ],
+);
+
+final tokenDeSenha = model(
+  'tokens_senha',
+  (
+    id: identity(),
+    usuarioId: integer(),
+    tokenHash: text(unique: true),
+    tipo: enumeration(TipoDeTokenDeSenha.values),
+    expiraEm: dateTime(),
+    usadoEm: dateTime().nullable(),
+    criadoEm: dateTime(defaultSql: 'CURRENT_TIMESTAMP'),
+  ),
+  indexes: (t) => [
+    index((t.usuarioId, t.tipo), name: 'tokens_senha_usuario_tipo'),
+  ],
+  relations: (t) =>
+      (usuario: references(t.usuarioId, () => usuario, onDelete: .cascade)),
 );

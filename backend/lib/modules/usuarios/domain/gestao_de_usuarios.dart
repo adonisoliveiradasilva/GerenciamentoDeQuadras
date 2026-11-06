@@ -1,5 +1,6 @@
 import '../../../core/auth/hash_de_senha.dart';
 import '../../../core/paginacao/paginacao.dart';
+import 'envio_de_convite.dart';
 import 'erros_usuario.dart';
 import 'perfil.dart';
 import 'usuario.dart';
@@ -10,10 +11,12 @@ class GestaoDeUsuarios {
     this._usuarios, {
     required this.perfil,
     required this._hashDeSenha,
+    this._convites,
   });
 
   final UsuarioRepositorio _usuarios;
   final HashDeSenha _hashDeSenha;
+  final EnvioDeConvite? _convites;
   final Perfil perfil;
 
   Future<Pagina<Usuario>> listar(ParametrosPaginacao parametros) =>
@@ -38,11 +41,13 @@ class GestaoDeUsuarios {
     );
 
     final removido = await _usuarios.buscarRemovidoPorEmail(dados.email);
-    if (removido != null) {
-      return await _usuarios.reativar(removido.id, novo) ??
-          (throw const EmailJaCadastrado());
-    }
-    return _usuarios.criar(novo);
+    final usuario = removido == null
+        ? await _usuarios.criar(novo)
+        : await _usuarios.reativar(removido.id, novo) ??
+              (throw const EmailJaCadastrado());
+
+    if (!usuario.possuiSenha) await _convites?.enviarConvite(usuario);
+    return usuario;
   }
 
   Future<Usuario> atualizar(

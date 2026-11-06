@@ -1,0 +1,1 @@
+enum TipoDeTokenDeSenha { criar, redefinir }
