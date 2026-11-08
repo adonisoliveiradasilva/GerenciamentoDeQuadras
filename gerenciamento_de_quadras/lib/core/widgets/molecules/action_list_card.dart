@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 class ActionListCard extends StatelessWidget {
   final String title;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const ActionListCard({
     super.key,
     required this.title,
-    required this.onEdit,
-    required this.onDelete,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -34,21 +34,21 @@ class ActionListCard extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                color: Colors.blueGrey,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(color: Colors.blueGrey, fontSize: 16, fontWeight: FontWeight.w500),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.edit_square, color: Color(0xFF1E65D0)),
-            onPressed: onEdit,
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Color(0xFFA65C5C)),
-            onPressed: onDelete,
-          ),
+          if (onEdit != null)
+            IconButton(
+              icon: const Icon(Icons.edit_square, color: Color(0xFF1E65D0)),
+              onPressed: onEdit,
+            ),
+          if (onDelete != null)
+            IconButton(
+              icon: const Icon(Icons.delete, color: Color(0xFFA65C5C)),
+              onPressed: onDelete,
+            ),
+          if (onEdit == null && onDelete == null)
+            const SizedBox(height: 48, width: 16),
         ],
       ),
     );
