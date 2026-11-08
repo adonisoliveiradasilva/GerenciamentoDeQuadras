@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gerenciamento_de_quadras/features/client/layout/client_layout.dart';
+import 'package:gerenciamento_de_quadras/features/employee/layout/employee_layout.dart';
 import 'package:gerenciamento_de_quadras/features/manager/layout/manager_layout.dart';
 import '../../core/widgets/atoms/custom_text_field.dart';
 import '../../core/widgets/atoms/primary_button.dart';
@@ -46,13 +47,11 @@ class LoginPage extends StatelessWidget {
             icon: const FaIcon(FontAwesomeIcons.arrowRight, size: 18, color: Colors.white),
             onPressed: () {
               // TODO: Implementar lógica de autenticação
-              // Navigator.pushReplacement(
-              //   context, 
-              //   MaterialPageRoute(builder: (context) => const ManagerLayout())
-              // );
               Navigator.pushReplacement(
                 context, 
+                // MaterialPageRoute(builder: (context) => const ManagerLayout())
                 MaterialPageRoute(builder: (context) => const ClientLayout())
+                // MaterialPageRoute(builder: (context) => const EmployeeLayout())
               );
             },
           ),
