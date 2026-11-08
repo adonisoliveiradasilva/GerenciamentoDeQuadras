@@ -3,6 +3,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gerenciamento_de_quadras/features/manager/funcionarios/funcionarios_page.dart';
 import 'package:gerenciamento_de_quadras/features/manager/quadras/quadras_page.dart';
 import 'package:gerenciamento_de_quadras/features/manager/clientes/clientes_page.dart';
+import 'package:gerenciamento_de_quadras/features/manager/relatorios/relatorios_page.dart';
 class ManagerLayout extends StatefulWidget {
   const ManagerLayout({super.key});
 
@@ -14,10 +15,10 @@ class _ManagerLayoutState extends State<ManagerLayout> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
+    const RelatoriosPage(),
     const QuadrasPage(),
     const ClientesPage(),
-    const FuncionariosPage(),
-    const Center(child: Text("Página de Relatórios em construção")),
+    const FuncionariosPage()
   ];
 
   @override
@@ -37,6 +38,10 @@ class _ManagerLayoutState extends State<ManagerLayout> {
         },
         items: const [
           BottomNavigationBarItem(
+            icon: Padding(padding: EdgeInsets.only(bottom: 4), child: FaIcon(FontAwesomeIcons.chartSimple)),
+            label: 'Relatórios',
+          ),
+          BottomNavigationBarItem(
             icon: Padding(padding: EdgeInsets.only(bottom: 4), child: FaIcon(FontAwesomeIcons.tableTennisPaddleBall)),
             label: 'Quadras',
           ),
@@ -47,10 +52,6 @@ class _ManagerLayoutState extends State<ManagerLayout> {
           BottomNavigationBarItem(
             icon: Padding(padding: EdgeInsets.only(bottom: 4), child: FaIcon(FontAwesomeIcons.userTie)),
             label: 'Funcionários',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(padding: EdgeInsets.only(bottom: 4), child: FaIcon(FontAwesomeIcons.chartSimple)),
-            label: 'Relatórios',
           ),
         ],
       ),
