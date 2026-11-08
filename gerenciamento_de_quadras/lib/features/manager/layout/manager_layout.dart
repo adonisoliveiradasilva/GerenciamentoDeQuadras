@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:gerenciamento_de_quadras/features/manager/quadras/quadras_page.dart';
-
+import 'package:gerenciamento_de_quadras/features/manager/clientes/clientes_page.dart';
 class ManagerLayout extends StatefulWidget {
   const ManagerLayout({super.key});
 
@@ -14,7 +14,7 @@ class _ManagerLayoutState extends State<ManagerLayout> {
 
   final List<Widget> _pages = [
     const QuadrasPage(),
-    const Center(child: Text("Página de Clientes em construção")),
+    const ClientesPage(),
     const Center(child: Text("Página de Funcionários em construção")),
     const Center(child: Text("Página de Relatórios em construção")),
   ];
