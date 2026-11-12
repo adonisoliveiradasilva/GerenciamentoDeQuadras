@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  // Use 10.0.2.2 se estiver testando em um emulador Android.
+  // Endereço utilizado pelo emulador Android para acessar o computador.
   static const String baseUrl = 'http://10.0.2.2:8080';
 
   Future<Map<String, dynamic>> login({
@@ -18,11 +18,18 @@ class AuthService {
       body: jsonEncode({'email': email, 'senha': senha}),
     );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    } else {
-      final body = jsonDecode(response.body);
-      throw Exception(body['mensagem'] ?? 'Falha ao realizar login');
+    final Map<String, dynamic> body;
+
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw Exception('O servidor retornou uma resposta inválida.');
     }
+
+    if (response.statusCode == 200) {
+      return body;
+    }
+
+    throw Exception(body['mensagem'] ?? 'Falha ao realizar login.');
   }
 }
