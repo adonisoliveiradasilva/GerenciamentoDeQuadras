@@ -67,15 +67,15 @@ class _LoginPageState extends State<LoginPage> {
       Widget paginaDestino;
 
       switch (perfil) {
-        case 'GERENTE':
+        case 'gerente':
           paginaDestino = const ManagerLayout();
           break;
 
-        case 'FUNCIONARIO':
+        case 'funcionario':
           paginaDestino = const EmployeeLayout();
           break;
 
-        case 'CLIENTE':
+        case 'cliente':
           paginaDestino = const ClientLayout();
           break;
 
@@ -127,7 +127,6 @@ class _LoginPageState extends State<LoginPage> {
               color: Colors.blueGrey,
             ),
           ),
-
           CustomTextField(
             controller: _senhaController,
             label: 'Senha',
@@ -138,7 +137,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
             isPassword: true,
           ),
-
           GestureDetector(
             onTap: () {
               Navigator.push(
@@ -156,7 +154,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-
           PrimaryButton(
             text: 'Entrar',
             icon: const FaIcon(
