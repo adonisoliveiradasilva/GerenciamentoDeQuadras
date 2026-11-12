@@ -4,7 +4,8 @@ class PrimaryButton extends StatelessWidget {
   final String text;
   final Widget icon;
   final VoidCallback onPressed;
-  final Color? backgroundColor; 
+  final Color? backgroundColor;
+  final bool isLoading;
 
   const PrimaryButton({
     super.key,
@@ -12,6 +13,7 @@ class PrimaryButton extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     this.backgroundColor,
+    this.isLoading = false,
   });
 
   @override
@@ -26,16 +28,30 @@ class PrimaryButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        onPressed: onPressed,
+        onPressed: isLoading ? null : onPressed,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              text,
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              isLoading ? 'Carregando...' : text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(width: 12),
-            icon,
+            if (isLoading)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            else
+              icon,
           ],
         ),
       ),
