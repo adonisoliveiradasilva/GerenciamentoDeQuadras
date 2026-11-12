@@ -22,6 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _authService = AuthService();
+
   bool _isLoading = false;
 
   @override
@@ -48,18 +49,38 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final resposta = await _authService.login(email: email, senha: senha);
+
       final usuario = resposta['usuario'];
-      final perfil = usuario?['perfil'];
+
+      if (usuario is! Map<String, dynamic>) {
+        throw Exception('Resposta inválida do servidor.');
+      }
+
+      final perfil = usuario['perfil'];
+
+      if (perfil is! String) {
+        throw Exception('Perfil do usuário não encontrado.');
+      }
 
       if (!mounted) return;
 
       Widget paginaDestino;
-      if (perfil == 'GERENTE') {
-        paginaDestino = const ManagerLayout();
-      } else if (perfil == 'FUNCIONARIO') {
-        paginaDestino = const EmployeeLayout();
-      } else {
-        paginaDestino = const ClientLayout();
+
+      switch (perfil) {
+        case 'GERENTE':
+          paginaDestino = const ManagerLayout();
+          break;
+
+        case 'FUNCIONARIO':
+          paginaDestino = const EmployeeLayout();
+          break;
+
+        case 'CLIENTE':
+          paginaDestino = const ClientLayout();
+          break;
+
+        default:
+          throw Exception('Perfil de usuário desconhecido: $perfil');
       }
 
       Navigator.pushReplacement(
@@ -68,6 +89,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
       );
@@ -105,6 +127,7 @@ class _LoginPageState extends State<LoginPage> {
               color: Colors.blueGrey,
             ),
           ),
+
           CustomTextField(
             controller: _senhaController,
             label: 'Senha',
@@ -115,6 +138,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             isPassword: true,
           ),
+
           GestureDetector(
             onTap: () {
               Navigator.push(
@@ -132,16 +156,16 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
+
           PrimaryButton(
-            text: _isLoading ? 'Carregando...' : 'Entrar',
-            icon: _isLoading
-                ? null
-                : const FaIcon(
-                    FontAwesomeIcons.arrowRight,
-                    size: 18,
-                    color: Colors.white,
-                  ),
-            onPressed: _isLoading ? () {} : _fazerLogin,
+            text: 'Entrar',
+            icon: const FaIcon(
+              FontAwesomeIcons.arrowRight,
+              size: 18,
+              color: Colors.white,
+            ),
+            onPressed: _fazerLogin,
+            isLoading: _isLoading,
           ),
         ],
       ),
