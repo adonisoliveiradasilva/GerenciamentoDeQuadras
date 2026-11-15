@@ -11,6 +11,16 @@ class AuthService {
   static const String _expiraEmKey = 'auth_expira_em';
   static const String _usuarioKey = 'auth_usuario';
 
+  String _extrairMensagemErro(Map<String, dynamic> body, String padrao) {
+    final campos = body['campos'];
+
+    if (campos is Map && campos.isNotEmpty) {
+      return campos.values.join('\n');
+    }
+
+    return body['mensagem']?.toString() ?? padrao;
+  }
+
   Future<Map<String, dynamic>> login({
     required String email,
     required String senha,
@@ -36,7 +46,62 @@ class AuthService {
       return body;
     }
 
-    throw Exception(body['mensagem'] ?? 'Falha ao realizar login.');
+    throw Exception(_extrairMensagemErro(body, 'Falha ao realizar login.'));
+  }
+
+  Future<String> cadastrarCliente({
+    required String nome,
+    required String email,
+  }) async {
+    final url = Uri.parse('$baseUrl/auth/cadastro');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'nome': nome, 'email': email}),
+    );
+
+    final Map<String, dynamic> body;
+
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw Exception('O servidor retornou uma resposta inválida.');
+    }
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return body['mensagem']?.toString() ??
+          'Enviamos um email para $email com o link para criar a sua senha.';
+    }
+
+    throw Exception(_extrairMensagemErro(body, 'Falha ao realizar cadastro.'));
+  }
+
+  Future<String> solicitarRedefinicaoSenha({required String email}) async {
+    final url = Uri.parse('$baseUrl/auth/esqueci-senha');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+
+    final Map<String, dynamic> body;
+
+    try {
+      body = jsonDecode(response.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw Exception('O servidor retornou uma resposta inválida.');
+    }
+
+    if (response.statusCode == 200) {
+      return body['mensagem']?.toString() ??
+          'Se o email estiver cadastrado, você receberá um link para definir uma nova senha.';
+    }
+
+    throw Exception(
+      _extrairMensagemErro(body, 'Falha ao solicitar redefinição de senha.'),
+    );
   }
 
   Future<void> _salvarSessao(Map<String, dynamic> dados) async {
