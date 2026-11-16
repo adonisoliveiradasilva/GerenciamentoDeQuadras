@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/widgets/atoms/search_input.dart';
 import '../../../../core/widgets/atoms/pagination_controls.dart';
 import '../../../../core/widgets/molecules/action_list_card.dart';
@@ -6,12 +7,13 @@ import '../../../../core/widgets/molecules/agendamento_details_modal.dart';
 import 'employee_agendamentos_controller.dart';
 
 class EmployeeAgendamentosPage extends StatefulWidget {
-  final bool apenasHoje; 
+  final bool apenasHoje;
 
   const EmployeeAgendamentosPage({super.key, this.apenasHoje = false});
 
   @override
-  State<EmployeeAgendamentosPage> createState() => _EmployeeAgendamentosPageState();
+  State<EmployeeAgendamentosPage> createState() =>
+      _EmployeeAgendamentosPageState();
 }
 
 class _EmployeeAgendamentosPageState extends State<EmployeeAgendamentosPage> {
@@ -38,31 +40,73 @@ class _EmployeeAgendamentosPageState extends State<EmployeeAgendamentosPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-            const Text('Agendamentos', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF0D253F))),
-            const Text('Valide os agendamentos', style: TextStyle(color: Colors.blueGrey, fontSize: 14)),
+            const Text(
+              'Agendamentos',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0D253F),
+              ),
+            ),
+            const Text(
+              'Valide os agendamentos',
+              style: TextStyle(color: Colors.blueGrey, fontSize: 14),
+            ),
             const SizedBox(height: 24),
-            
-            SearchInput(hintText: 'Pesquisar', onChanged: _controller.pesquisar),
+
+            SearchInput(
+              hintText: 'Pesquisar',
+              onChanged: _controller.pesquisar,
+            ),
             const SizedBox(height: 24),
 
             Expanded(
               child: ListenableBuilder(
                 listenable: _controller,
                 builder: (context, child) {
-                  final lista = _controller.agendamentosPaginados;
+                  if (_controller.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (_controller.errorMessage != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _controller.errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _controller.carregarAgendamentos,
+                            child: const Text('Tentar novamente'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final lista = _controller.agendamentos;
                   if (lista.isEmpty) {
-                    return const Center(child: Text("Nenhum agendamento encontrado.", style: TextStyle(color: Colors.grey)));
+                    return const Center(
+                      child: Text(
+                        'Nenhum agendamento encontrado.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
                   }
 
                   return ListView.builder(
                     itemCount: lista.length,
                     itemBuilder: (context, index) {
                       final item = lista[index];
-                
+
                       bool showDateHeader = true;
                       if (index > 0) {
                         final previousItem = lista[index - 1];
-                        if (previousItem.data == item.data) {
+                        if (previousItem.dataRelativa == item.dataRelativa) {
                           showDateHeader = false;
                         }
                       }
@@ -71,19 +115,26 @@ class _EmployeeAgendamentosPageState extends State<EmployeeAgendamentosPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (showDateHeader) ...[
-                            Text(item.data, style: const TextStyle(color: Colors.blueGrey, fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text(
+                              item.dataRelativa,
+                              style: const TextStyle(
+                                color: Colors.blueGrey,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                           ],
                           ActionListCard(
-                            title: item.descricaoCompleta,
+                            title: item.descricaoFuncionario,
                             onView: () {
                               showDialog(
                                 context: context,
                                 builder: (context) => AgendamentoDetailsModal(
-                                  cliente: item.cliente,
-                                  data: item.data,
-                                  horario: item.horario,
-                                  quadra: item.quadra,
+                                  cliente: item.clienteNome,
+                                  data: item.dataRelativa,
+                                  horario: item.intervaloHorario,
+                                  quadra: item.quadraNome,
                                 ),
                               );
                             },
@@ -96,22 +147,26 @@ class _EmployeeAgendamentosPageState extends State<EmployeeAgendamentosPage> {
                 },
               ),
             ),
-            
+
             const SizedBox(height: 16),
 
             ListenableBuilder(
               listenable: _controller,
               builder: (context, child) {
-                final total = _controller.totalPages == 0 ? 1 : _controller.totalPages;
+                final total = _controller.totalPages == 0
+                    ? 1
+                    : _controller.totalPages;
                 return PaginationControls(
                   currentPage: _controller.currentPage,
-                  totalPages: total, 
+                  totalPages: total,
                   itemsPerPage: _controller.itemsPerPage,
-                  onItemsPerPageChanged: (v) { if (v != null) _controller.alterarItensPorPagina(v); },
+                  onItemsPerPageChanged: (v) {
+                    if (v != null) _controller.alterarItensPorPagina(v);
+                  },
                   onPrevious: _controller.paginaAnterior,
                   onNext: _controller.proximaPagina,
                 );
-              }
+              },
             ),
           ],
         ),

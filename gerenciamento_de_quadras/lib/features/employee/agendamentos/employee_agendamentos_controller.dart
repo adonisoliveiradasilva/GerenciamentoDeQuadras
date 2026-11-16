@@ -1,114 +1,88 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class FuncionarioAgendamentoDto {
-  final String id;
-  final String data; 
-  final String horario; 
-  final String cliente;
-  final String quadra;
-  final DateTime dateObj; 
-
-  FuncionarioAgendamentoDto({
-    required this.id, required this.data, required this.horario, 
-    required this.cliente, required this.quadra, required this.dateObj
-  });
-
-  String get descricaoCompleta => '$horario: $cliente - $quadra'; 
-}
+import '../../../core/models/agendamento_model.dart';
+import '../../../core/services/agendamentos_service.dart';
 
 class EmployeeAgendamentosController extends ChangeNotifier {
+  final AgendamentosService _service = AgendamentosService();
   final bool apenasHoje;
-  late List<FuncionarioAgendamentoDto> _mockBancoDeDados;
 
-  List<FuncionarioAgendamentoDto> agendamentosFiltrados = [];
+  List<AgendamentoModel> agendamentos = [];
   String searchQuery = '';
   int currentPage = 1;
-  int itemsPerPage = 5; 
+  int itemsPerPage = 5;
+  int totalPages = 1;
+  bool isLoading = false;
+  String? errorMessage;
+
+  Timer? _debounce;
 
   EmployeeAgendamentosController({this.apenasHoje = false}) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    carregarAgendamentos();
+  }
 
-    final mockCompleto = List.generate(45, (index) {
-      int diasOffset;
-      
-      if (index < 8) {
-        diasOffset = 0;
-      } else if (index < 18) {
-        diasOffset = -((index % 5) + 1);
-      } else {
-        diasOffset = (index % 20) + 1;
-      }
+  Future<void> carregarAgendamentos() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
 
-      final dt = today.add(Duration(days: diasOffset));
-      final isToday = dt.isAtSameMomentAs(today);
-      final dateStr = isToday ? 'Hoje' : '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
-      
-      final horaInicio = 8 + (index % 12); 
-      final horarioStr = '${horaInicio.toString().padLeft(2, '0')}:00 - ${(horaInicio + 1).toString().padLeft(2, '0')}:00';
-
-      return FuncionarioAgendamentoDto(
-        id: index.toString(),
-        data: dateStr,
-        horario: horarioStr,
-        cliente: 'Cliente ${(index % 15) + 1}',
-        quadra: 'Quadra ${(index % 3) + 1}',
-        dateObj: dt,
+    try {
+      final resultado = await _service.listarAgendamentos(
+        pagina: currentPage,
+        tamanho: itemsPerPage,
+        escopo: apenasHoje ? 'hoje' : 'todos',
+        busca: searchQuery,
       );
-    });
 
-    mockCompleto.sort((a, b) => a.dateObj.compareTo(b.dateObj));
-
-    _mockBancoDeDados = mockCompleto.where((a) {
-      if (apenasHoje) return a.dateObj.isAtSameMomentAs(today);
-      return true;
-    }).toList();
-
-    agendamentosFiltrados = _mockBancoDeDados;
+      agendamentos = resultado.itens;
+      totalPages = resultado.totalPaginas;
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+    } catch (e) {
+      errorMessage = e.toString().replaceAll('Exception: ', '');
+      agendamentos = [];
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
-
-  List<FuncionarioAgendamentoDto> get agendamentosPaginados {
-    int startIndex = (currentPage - 1) * itemsPerPage;
-    int endIndex = startIndex + itemsPerPage;
-    if (startIndex >= agendamentosFiltrados.length) return [];
-    if (endIndex > agendamentosFiltrados.length) endIndex = agendamentosFiltrados.length;
-    return agendamentosFiltrados.sublist(startIndex, endIndex);
-  }
-
-  int get totalPages => (agendamentosFiltrados.length / itemsPerPage).ceil();
 
   void pesquisar(String query) {
     searchQuery = query;
     currentPage = 1;
-    if (query.isEmpty) {
-      agendamentosFiltrados = _mockBancoDeDados;
-    } else {
-      agendamentosFiltrados = _mockBancoDeDados.where((a) => 
-        a.cliente.toLowerCase().contains(query.toLowerCase()) || 
-        a.quadra.toLowerCase().contains(query.toLowerCase()) ||
-        a.data.contains(query)
-      ).toList();
-    }
-    notifyListeners();
+
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      carregarAgendamentos();
+    });
   }
 
   void alterarItensPorPagina(int qtd) {
     itemsPerPage = qtd;
     currentPage = 1;
-    notifyListeners();
+    carregarAgendamentos();
   }
 
   void proximaPagina() {
     if (currentPage < totalPages) {
       currentPage++;
-      notifyListeners();
+      carregarAgendamentos();
     }
   }
 
   void paginaAnterior() {
     if (currentPage > 1) {
       currentPage--;
-      notifyListeners();
+      carregarAgendamentos();
     }
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 }
