@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import 'relatorios_controller.dart';
 
 class RelatoriosPage extends StatefulWidget {
@@ -28,8 +29,18 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-            const Text('Relatórios', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF0D253F))),
-            const Text('Acompanhe as métricas', style: TextStyle(color: Colors.blueGrey, fontSize: 14)),
+            const Text(
+              'Relatórios',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0D253F),
+              ),
+            ),
+            const Text(
+              'Acompanhe as métricas',
+              style: TextStyle(color: Colors.blueGrey, fontSize: 14),
+            ),
             const SizedBox(height: 24),
 
             ListenableBuilder(
@@ -38,50 +49,92 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
                 return GestureDetector(
                   onTap: () => _controller.selecionarPeriodo(context),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        const FaIcon(FontAwesomeIcons.calendarDay, color: Color(0xFF1E65D0), size: 18),
+                        const FaIcon(
+                          FontAwesomeIcons.calendarDay,
+                          color: Color(0xFF1E65D0),
+                          size: 18,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             _controller.periodoFormatado,
-                            style: TextStyle(
-                              color: _controller.periodoSelecionado == null ? Colors.grey.shade500 : const Color(0xFF0D253F),
+                            style: const TextStyle(
+                              color: Color(0xFF0D253F),
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
-                        const Icon(Icons.arrow_drop_down, color: Colors.blueGrey),
+                        const Icon(
+                          Icons.arrow_drop_down,
+                          color: Colors.blueGrey,
+                        ),
                       ],
                     ),
                   ),
                 );
-              }
+              },
             ),
-            
+
             const SizedBox(height: 24),
 
-            // Conteúdo dos Gráficos
             Expanded(
               child: ListenableBuilder(
                 listenable: _controller,
                 builder: (context, child) {
                   if (_controller.isLoading) {
-                    return const Center(child: CircularProgressIndicator(color: Color(0xFF1E65D0)));
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF1E65D0),
+                      ),
+                    );
+                  }
+
+                  if (_controller.errorMessage != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _controller.errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _controller.carregarDadosDaApi,
+                            child: const Text('Tentar novamente'),
+                          ),
+                        ],
+                      ),
+                    );
                   }
 
                   return SingleChildScrollView(
                     child: Column(
                       children: [
-                        _buildChartCard('Quadras mais usadas', _buildBarChart(_controller.quadrasUsadas)),
-                        _buildChartCard('Clientes mais frequentes', _buildBarChart(_controller.clientesFrequentes)),
-                        _buildChartCard('Dias mais movimentados', _buildLineChart(_controller.diasMovimentados)),
+                        _buildChartCard(
+                          'Quadras mais usadas',
+                          _buildBarChart(_controller.quadrasUsadas),
+                        ),
+                        _buildChartCard(
+                          'Clientes mais frequentes',
+                          _buildBarChart(_controller.clientesFrequentes),
+                        ),
+                        _buildChartCard(
+                          'Dias mais movimentados',
+                          _buildLineChart(_controller.diasMovimentados),
+                        ),
                         const SizedBox(height: 32),
                       ],
                     ),
@@ -106,7 +159,14 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0D253F))),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0D253F),
+            ),
+          ),
           const SizedBox(height: 24),
           SizedBox(height: 200, child: chart),
         ],
@@ -115,32 +175,56 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
   }
 
   Widget _buildBarChart(Map<String, double> data) {
+    if (data.isEmpty) {
+      return const Center(
+        child: Text(
+          'Sem dados no período selecionado.',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
     final keys = data.keys.toList();
     final values = data.values.toList();
-    double maxY = values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 0;
+    final maxVal = values.reduce((a, b) => a > b ? a : b);
+    final maxY = maxVal == 0 ? 5.0 : maxVal + (maxVal * 0.2);
 
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: maxY + (maxY * 0.2),
-        barTouchData: BarTouchData(enabled: false),
+        maxY: maxY,
+        barTouchData: BarTouchData(enabled: true),
         titlesData: FlTitlesData(
           show: true,
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                if (value.toInt() < 0 || value.toInt() >= keys.length) return const SizedBox.shrink();
+                if (value.toInt() < 0 || value.toInt() >= keys.length) {
+                  return const SizedBox.shrink();
+                }
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(keys[value.toInt()], style: const TextStyle(color: Colors.blueGrey, fontSize: 10)),
+                  child: Text(
+                    keys[value.toInt()],
+                    style: const TextStyle(
+                      color: Colors.blueGrey,
+                      fontSize: 10,
+                    ),
+                  ),
                 );
               },
             ),
           ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         gridData: const FlGridData(show: false),
         borderData: FlBorderData(show: false),
@@ -161,42 +245,69 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     );
   }
 
-  // Lógica do Gráfico de Linha
   Widget _buildLineChart(Map<String, double> data) {
+    if (data.isEmpty) {
+      return const Center(
+        child: Text(
+          'Sem dados no período selecionado.',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
     final keys = data.keys.toList();
     final values = data.values.toList();
-    double maxY = values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 0;
+    final maxVal = values.reduce((a, b) => a > b ? a : b);
+    final maxY = maxVal == 0 ? 5.0 : maxVal + (maxVal * 0.2);
 
     return LineChart(
       LineChartData(
         minY: 0,
-        maxY: maxY + (maxY * 0.2),
+        maxY: maxY,
         titlesData: FlTitlesData(
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                if (value.toInt() < 0 || value.toInt() >= keys.length) return const SizedBox.shrink();
+                if (value.toInt() < 0 || value.toInt() >= keys.length) {
+                  return const SizedBox.shrink();
+                }
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(keys[value.toInt()], style: const TextStyle(color: Colors.blueGrey, fontSize: 10)),
+                  child: Text(
+                    keys[value.toInt()],
+                    style: const TextStyle(
+                      color: Colors.blueGrey,
+                      fontSize: 10,
+                    ),
+                  ),
                 );
               },
             ),
           ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         gridData: FlGridData(
-          show: true, 
+          show: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: Colors.grey.shade200, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: List.generate(keys.length, (index) => FlSpot(index.toDouble(), values[index])),
+            spots: List.generate(
+              keys.length,
+              (index) => FlSpot(index.toDouble(), values[index]),
+            ),
             isCurved: true,
             color: const Color(0xFF1E65D0),
             barWidth: 4,
@@ -204,7 +315,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
             dotData: const FlDotData(show: true),
             belowBarData: BarAreaData(
               show: true,
-              color: const Color(0xFF1E65D0).withOpacity(0.1),
+              color: const Color(0xFF1E65D0).withValues(alpha: 0.1),
             ),
           ),
         ],

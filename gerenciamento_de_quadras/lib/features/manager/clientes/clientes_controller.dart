@@ -1,75 +1,104 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class ClientesController extends ChangeNotifier {
-  final List<String> _mockBancoDeDados = List.generate(25, (index) => 'Cliente ${index + 1}');
+import '../../../core/models/usuario_model.dart';
+import '../../../core/services/usuarios_service.dart';
 
-  List<String> clientesFiltrados = [];
+class ClientesController extends ChangeNotifier {
+  final UsuariosService _service = UsuariosService();
+
+  List<UsuarioModel> clientes = [];
   String searchQuery = '';
   int currentPage = 1;
   int itemsPerPage = 10;
+  int totalPages = 1;
   bool isLoading = false;
+  String? errorMessage;
+
+  Timer? _debounce;
 
   ClientesController() {
-    clientesFiltrados = _mockBancoDeDados;
+    carregarClientes();
   }
 
-  List<String> get clientesPaginados {
-    int startIndex = (currentPage - 1) * itemsPerPage;
-    int endIndex = startIndex + itemsPerPage;
-    if (startIndex >= clientesFiltrados.length) return [];
-    if (endIndex > clientesFiltrados.length) endIndex = clientesFiltrados.length;
-    return clientesFiltrados.sublist(startIndex, endIndex);
-  }
+  Future<void> carregarClientes() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
 
-  int get totalPages => (clientesFiltrados.length / itemsPerPage).ceil();
+    try {
+      final resultado = await _service.listarClientes(
+        pagina: currentPage,
+        tamanho: itemsPerPage,
+        busca: searchQuery,
+      );
+
+      clientes = resultado.itens;
+      totalPages = resultado.totalPaginas;
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+    } catch (e) {
+      errorMessage = e.toString().replaceAll('Exception: ', '');
+      clientes = [];
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
   void pesquisar(String query) {
     searchQuery = query;
     currentPage = 1;
-    if (query.isEmpty) {
-      clientesFiltrados = _mockBancoDeDados;
-    } else {
-      clientesFiltrados = _mockBancoDeDados
-          .where((c) => c.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    }
-    notifyListeners();
+
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      carregarClientes();
+    });
   }
 
   void alterarItensPorPagina(int qtd) {
     itemsPerPage = qtd;
     currentPage = 1;
-    notifyListeners();
+    carregarClientes();
   }
 
   void proximaPagina() {
     if (currentPage < totalPages) {
       currentPage++;
-      notifyListeners();
+      carregarClientes();
     }
   }
 
   void paginaAnterior() {
     if (currentPage > 1) {
       currentPage--;
-      notifyListeners();
+      carregarClientes();
     }
   }
 
-  Future<String?> deletarCliente(String clienteName) async {
+  Future<String?> deletarCliente(int id) async {
     isLoading = true;
     notifyListeners();
+
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      _mockBancoDeDados.remove(clienteName);
-      pesquisar(searchQuery); 
-      isLoading = false;
-      notifyListeners();
+      await _service.deletarCliente(id);
+      if (clientes.length == 1 && currentPage > 1) {
+        currentPage--;
+      }
+      await carregarClientes();
       return null;
     } catch (e) {
       isLoading = false;
       notifyListeners();
-      return "Erro ao remover o cliente. Tente novamente.";
+      return e.toString().replaceAll('Exception: ', '');
     }
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 }

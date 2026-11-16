@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+import '../../../core/models/usuario_model.dart';
 import '../../../core/widgets/atoms/form_input.dart';
 import '../../../core/widgets/atoms/primary_button.dart';
 import '../../../core/widgets/atoms/custom_toast.dart';
 import 'clientes_form_controller.dart';
 
 class ClientesFormPage extends StatefulWidget {
-  final String? clienteName; 
+  final UsuarioModel? cliente;
 
-  const ClientesFormPage({super.key, this.clienteName});
+  const ClientesFormPage({super.key, this.cliente});
 
   @override
   State<ClientesFormPage> createState() => _ClientesFormPageState();
@@ -20,7 +22,7 @@ class _ClientesFormPageState extends State<ClientesFormPage> {
   @override
   void initState() {
     super.initState();
-    _controller.carregarDados(widget.clienteName);
+    _controller.carregarDados(widget.cliente);
   }
 
   @override
@@ -31,6 +33,8 @@ class _ClientesFormPageState extends State<ClientesFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.cliente != null;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4FA),
       appBar: AppBar(
@@ -46,60 +50,78 @@ class _ClientesFormPageState extends State<ClientesFormPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Clientes', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF0D253F))),
-            const Text('Gerencie os clientes', style: TextStyle(color: Colors.blueGrey, fontSize: 14)),
+            const Text(
+              'Clientes',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0D253F),
+              ),
+            ),
+            Text(
+              isEditing ? 'Editar cliente' : 'Novo cliente',
+              style: const TextStyle(color: Colors.blueGrey, fontSize: 14),
+            ),
             const SizedBox(height: 32),
 
             FormInput(
-              label: 'Nome do cliente', 
-              hintText: 'Nome do cliente', 
+              label: 'Nome do cliente',
+              hintText: 'Nome do cliente',
               controller: _controller.nomeController,
             ),
-            
+
             FormInput(
-              label: 'Data de nascimento', 
-              hintText: 'dd/mm/aaaa', 
+              label: 'Data de nascimento',
+              hintText: 'dd/mm/aaaa',
               controller: _controller.dataNascimentoController,
               readOnly: true,
               onTap: () => _controller.selecionarData(context),
             ),
-            
+
             FormInput(
-              label: 'Email', 
-              hintText: 'Email do cliente', 
+              label: 'Email',
+              hintText: 'Email do cliente',
               controller: _controller.emailController,
               keyboardType: TextInputType.emailAddress,
             ),
-            
+
             FormInput(
-              label: 'Telefone', 
-              hintText: 'Telefone do cliente', 
+              label: 'Telefone',
+              hintText: 'Telefone do cliente',
               controller: _controller.telefoneController,
               keyboardType: TextInputType.phone,
               inputFormatters: [_controller.telefoneMask],
             ),
 
             const SizedBox(height: 32),
-            
+
             ListenableBuilder(
               listenable: _controller,
               builder: (context, child) {
                 return PrimaryButton(
-                  text: _controller.isLoading ? 'Salvando...' : 'Salvar cliente',
-                  icon: const FaIcon(FontAwesomeIcons.solidFloppyDisk, color: Colors.white, size: 18),
-                  onPressed: _controller.isLoading ? () {} : () async {
+                  text: isEditing ? 'Atualizar cliente' : 'Salvar cliente',
+                  icon: const FaIcon(
+                    FontAwesomeIcons.solidFloppyDisk,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  isLoading: _controller.isLoading,
+                  onPressed: () async {
                     final errorMessage = await _controller.salvar();
                     if (context.mounted) {
                       if (errorMessage != null) {
                         CustomToast.showWarning(context, errorMessage);
                       } else {
-                        CustomToast.showSuccess(context, 'Cliente salvo com sucesso!');
-                        Navigator.pop(context);
+                        CustomToast.showSuccess(
+                          context,
+                          isEditing ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado! Enviamos um email para ele criar a senha.',
+                        );
+                        Navigator.pop(context, true);
                       }
                     }
                   },
                 );
-              }
+              },
             ),
             const SizedBox(height: 32),
           ],

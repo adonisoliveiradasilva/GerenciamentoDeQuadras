@@ -16,7 +16,7 @@ class DadosDoAgendamentoDto {
       quadraId: json['quadraId'] as int,
       dataInicio: DateTime.parse(json['dataInicio'] as String),
       dataFim: DateTime.parse(json['dataFim'] as String),
-      valorTotal: (json['valorTotal'] as num).toDouble(),
+      valorTotal: (json['valorTotal'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

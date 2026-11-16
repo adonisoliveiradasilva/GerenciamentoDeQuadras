@@ -1,20 +1,27 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/models/usuario_model.dart';
+import '../../../core/services/usuarios_service.dart';
+
 class FuncionariosFormController extends ChangeNotifier {
+  final UsuariosService _service = UsuariosService();
+
   final nomeController = TextEditingController();
   final dataNascimentoController = TextEditingController();
   final emailController = TextEditingController();
   final senhaController = TextEditingController();
   final confirmarSenhaController = TextEditingController();
 
+  int? funcionarioId;
   bool isLoading = false;
 
-  void carregarDados(String? funcionarioName) {
-    if (funcionarioName != null) {
-      nomeController.text = funcionarioName;
-      dataNascimentoController.text = "15/08/1995"; 
-      emailController.text = "funcionario@email.com";
-    }
+  void carregarDados(UsuarioModel? funcionario) {
+    if (funcionario == null) return;
+
+    funcionarioId = funcionario.id;
+    nomeController.text = funcionario.nome;
+    emailController.text = funcionario.email;
+    dataNascimentoController.text = funcionario.dataNascimentoFormatada ?? '';
   }
 
   Future<void> selecionarData(BuildContext context) async {
@@ -27,36 +34,65 @@ class FuncionariosFormController extends ChangeNotifier {
     if (picked != null) {
       final dia = picked.day.toString().padLeft(2, '0');
       final mes = picked.month.toString().padLeft(2, '0');
-      dataNascimentoController.text = "$dia/$mes/${picked.year}";
+      dataNascimentoController.text = '$dia/$mes/${picked.year}';
     }
   }
 
   Future<String?> salvar(bool isEditing) async {
-    if (nomeController.text.trim().isEmpty) return "Favor preencher o nome.";
-    if (dataNascimentoController.text.trim().isEmpty) return "Favor preencher a data de nascimento.";
-    
-    final email = emailController.text.trim();
-    if (email.isEmpty) return "Favor preencher o email.";
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(email)) return "Digite um email válido.";
+    final nome = nomeController.text.trim();
+    if (nome.isEmpty) return 'Favor preencher o nome.';
 
-    if (!isEditing || senhaController.text.isNotEmpty || confirmarSenhaController.text.isNotEmpty) {
-      if (senhaController.text.length < 6) return "A senha deve ter no mínimo 6 caracteres.";
-      if (senhaController.text != confirmarSenhaController.text) return "As senhas não coincidem.";
+    final email = emailController.text.trim();
+    if (email.isEmpty) return 'Favor preencher o email.';
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) return 'Digite um email válido.';
+
+    final senha = senhaController.text;
+    final confirmarSenha = confirmarSenhaController.text;
+
+    if (!isEditing || senha.isNotEmpty || confirmarSenha.isNotEmpty) {
+      if (senha.length < 8) {
+        return 'A senha deve ter no mínimo 8 caracteres.';
+      }
+      if (senha != confirmarSenha) {
+        return 'As senhas não coincidem.';
+      }
     }
+
+    final dataIso = UsuarioModel.formatarDataParaApi(
+      dataNascimentoController.text,
+    );
 
     isLoading = true;
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(seconds: 1)); 
+      if (funcionarioId == null) {
+        await _service.criarFuncionario(
+          nome: nome,
+          email: email,
+          dataNascimentoIso: dataIso,
+          senha: senha,
+          confirmarSenha: confirmarSenha,
+        );
+      } else {
+        await _service.atualizarFuncionario(
+          id: funcionarioId!,
+          nome: nome,
+          email: email,
+          dataNascimentoIso: dataIso,
+          senha: senha.isEmpty ? null : senha,
+          confirmarSenha: senha.isEmpty ? null : confirmarSenha,
+        );
+      }
+
       isLoading = false;
       notifyListeners();
       return null;
     } catch (e) {
       isLoading = false;
       notifyListeners();
-      return "Erro ao comunicar com o servidor.";
+      return e.toString().replaceAll('Exception: ', '');
     }
   }
 

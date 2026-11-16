@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+import '../../../../core/models/agendamento_model.dart';
 import '../../../../core/widgets/atoms/search_input.dart';
 import '../../../../core/widgets/atoms/pagination_controls.dart';
 import '../../../../core/widgets/molecules/action_list_card.dart';
@@ -10,7 +12,7 @@ import 'agendamentos_controller.dart';
 import 'agendamentos_form_page.dart';
 
 class AgendamentosPage extends StatefulWidget {
-  final bool isHistory; // Define se a tela carrega o Histórico ou Futuro
+  final bool isHistory;
 
   const AgendamentosPage({super.key, this.isHistory = false});
 
@@ -33,6 +35,19 @@ class _AgendamentosPageState extends State<AgendamentosPage> {
     super.dispose();
   }
 
+  Future<void> _abrirFormulario({AgendamentoModel? agendamento}) async {
+    final salvou = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AgendamentosFormPage(agendamento: agendamento),
+      ),
+    );
+
+    if (salvou == true) {
+      _controller.carregarAgendamentos();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -43,25 +58,63 @@ class _AgendamentosPageState extends State<AgendamentosPage> {
           children: [
             const SizedBox(height: 16),
             Text(
-              widget.isHistory ? 'Histórico' : 'Seus agendamentos', 
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF0D253F)),
+              widget.isHistory ? 'Histórico' : 'Seus agendamentos',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF0D253F),
+              ),
             ),
             Text(
-              widget.isHistory ? 'Agendamentos passados' : 'Gerencie seus agendamentos', 
+              widget.isHistory
+                  ? 'Agendamentos passados'
+                  : 'Gerencie seus agendamentos',
               style: const TextStyle(color: Colors.blueGrey, fontSize: 14),
             ),
             const SizedBox(height: 24),
-            
-            SearchInput(hintText: 'Pesquisar', onChanged: _controller.pesquisar),
+
+            SearchInput(
+              hintText: 'Pesquisar',
+              onChanged: _controller.pesquisar,
+            ),
             const SizedBox(height: 24),
 
             Expanded(
               child: ListenableBuilder(
                 listenable: _controller,
                 builder: (context, child) {
-                  final lista = _controller.agendamentosPaginados;
+                  if (_controller.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (_controller.errorMessage != null) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _controller.errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.redAccent),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _controller.carregarAgendamentos,
+                            child: const Text('Tentar novamente'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  final lista = _controller.agendamentos;
                   if (lista.isEmpty) {
-                    return const Center(child: Text("Nenhum agendamento encontrado.", style: TextStyle(color: Colors.grey)));
+                    return const Center(
+                      child: Text(
+                        'Nenhum agendamento encontrado.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
                   }
 
                   return ListView.builder(
@@ -71,31 +124,48 @@ class _AgendamentosPageState extends State<AgendamentosPage> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.data, style: const TextStyle(color: Colors.blueGrey, fontSize: 12, fontWeight: FontWeight.w600)),
+                          Text(
+                            item.dataFormatada,
+                            style: const TextStyle(
+                              color: Colors.blueGrey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           ActionListCard(
-                            title: item.descricao,
-                            onEdit: widget.isHistory ? null : () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => AgendamentosFormPage(agendamentoId: item.id)));
-                            },
-                            onDelete: widget.isHistory ? null : () async {
-                              final confirmou = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => DeleteConfirmationModal(
-                                  title: 'Agendamentos',
-                                  subtitle: 'Cancelar agendamento',
-                                  itemName: '${item.data} - ${item.descricao}',
-                                ),
-                              );
+                            title: item.descricaoCliente,
+                            onEdit: widget.isHistory
+                                ? null
+                                : () => _abrirFormulario(agendamento: item),
+                            onDelete: widget.isHistory
+                                ? null
+                                : () async {
+                                    final confirmou = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => DeleteConfirmationModal(
+                                        title: 'Agendamentos',
+                                        subtitle: 'Cancelar agendamento',
+                                        itemName:
+                                            '${item.dataFormatada}\n${item.descricaoCliente}',
+                                      ),
+                                    );
 
-                              if (confirmou == true && context.mounted) {
-                                final error = await _controller.cancelarAgendamento(item.id);
-                                if (context.mounted) {
-                                  if (error != null) CustomToast.showError(context, error);
-                                  else CustomToast.showSuccess(context, 'Agendamento cancelado com sucesso!');
-                                }
-                              }
-                            },
+                                    if (confirmou == true && context.mounted) {
+                                      final error = await _controller
+                                          .cancelarAgendamento(item.id);
+                                      if (context.mounted) {
+                                        if (error != null) {
+                                          CustomToast.showError(context, error);
+                                        } else {
+                                          CustomToast.showSuccess(
+                                            context,
+                                            'Agendamento cancelado com sucesso!',
+                                          );
+                                        }
+                                      }
+                                    }
+                                  },
                           ),
                           const SizedBox(height: 8),
                         ],
@@ -105,33 +175,39 @@ class _AgendamentosPageState extends State<AgendamentosPage> {
                 },
               ),
             ),
-            
+
             const SizedBox(height: 16),
 
             ListenableBuilder(
               listenable: _controller,
               builder: (context, child) {
-                final total = _controller.totalPages == 0 ? 1 : _controller.totalPages;
+                final total = _controller.totalPages == 0
+                    ? 1
+                    : _controller.totalPages;
                 return PaginationControls(
                   currentPage: _controller.currentPage,
-                  totalPages: total, 
+                  totalPages: total,
                   itemsPerPage: _controller.itemsPerPage,
-                  onItemsPerPageChanged: (v) { if (v != null) _controller.alterarItensPorPagina(v); },
+                  onItemsPerPageChanged: (v) {
+                    if (v != null) _controller.alterarItensPorPagina(v);
+                  },
                   onPrevious: _controller.paginaAnterior,
                   onNext: _controller.proximaPagina,
                 );
-              }
+              },
             ),
 
             const SizedBox(height: 16),
-            
+
             if (!widget.isHistory)
               PrimaryButton(
                 text: 'Novo agendamento',
-                icon: const FaIcon(FontAwesomeIcons.circlePlus, color: Colors.white, size: 18),
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AgendamentosFormPage()));
-                },
+                icon: const FaIcon(
+                  FontAwesomeIcons.circlePlus,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                onPressed: () => _abrirFormulario(),
               ),
           ],
         ),
