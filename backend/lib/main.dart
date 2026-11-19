@@ -22,6 +22,9 @@ import 'modules/usuarios/presentation/gestao_de_usuarios_rotas.dart';
 import 'modules/agendamentos/data/agendamento_repositorio_orm.dart';
 import 'modules/agendamentos/domain/servico_de_agendamentos.dart';
 import 'modules/agendamentos/presentation/agendamentos_rotas.dart';
+import 'modules/relatorios/data/relatorio_repositorio_orm.dart';
+import 'modules/relatorios/domain/servico_de_relatorios.dart';
+import 'modules/relatorios/presentation/relatorios_rotas.dart';
 
 Future<void> main() async {
   final ambiente = Ambiente.atual;
@@ -33,9 +36,11 @@ Future<void> main() async {
   final usuarios = UsuarioRepositorioOrm(banco);
   final quadras = QuadraRepositorioOrm(banco);
   final agendamentos = AgendamentoRepositorioORM(banco);
+  final relatorios = RelatorioRepositorioORM(banco);
 
   // Serviços instanciados
   final servicoDeAgendamentos = ServicoDeAgendamentos(agendamentos, quadras);
+  final servicoDeRelatorios = ServicoDeRelatorios(relatorios);
 
   final servicoDeSenhas = ServicoDeSenhas(
     usuarios: usuarios,
@@ -101,6 +106,10 @@ Future<void> main() async {
       (
         prefixo: '/agendamentos',
         rotas: AgendamentosRotas(servicoDeAgendamentos, servicoDeToken).router.call,
+      ),
+      (
+        prefixo: '/relatorios',
+        rotas: RelatoriosRotas(servicoDeRelatorios, servicoDeToken).router.call,
       ),
     ],
   );
