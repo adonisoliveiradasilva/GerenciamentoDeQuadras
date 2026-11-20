@@ -1,22 +1,51 @@
+import '../../../core/http/requisicao.dart';
+
 class DadosDoAgendamentoDto {
   final int quadraId;
   final DateTime dataInicio;
   final DateTime dataFim;
-  final double valorTotal;
 
   DadosDoAgendamentoDto({
     required this.quadraId,
     required this.dataInicio,
     required this.dataFim,
-    required this.valorTotal,
   });
 
-  factory DadosDoAgendamentoDto.fromJson(Map<String, dynamic> json) {
+  factory DadosDoAgendamentoDto.deJson(Map<String, Object?> json) {
+    final leitor = LeitorDeCampos(json);
+
+    final quadraId = leitor.inteiro('quadraId', minimo: 1);
+    final dataInicioStr = leitor.texto('dataInicio');
+    final dataFimStr = leitor.texto('dataFim');
+
+    DateTime? dataInicio;
+    if (dataInicioStr != null) {
+      dataInicio = DateTime.tryParse(dataInicioStr);
+      if (dataInicio == null) {
+        leitor.adicionarErro(
+          'dataInicio',
+          'Use uma data e hora válida no formato ISO 8601.',
+        );
+      }
+    }
+
+    DateTime? dataFim;
+    if (dataFimStr != null) {
+      dataFim = DateTime.tryParse(dataFimStr);
+      if (dataFim == null) {
+        leitor.adicionarErro(
+          'dataFim',
+          'Use uma data e hora válida no formato ISO 8601.',
+        );
+      }
+    }
+
+    leitor.validar();
+
     return DadosDoAgendamentoDto(
-      quadraId: json['quadraId'] as int,
-      dataInicio: DateTime.parse(json['dataInicio'] as String),
-      dataFim: DateTime.parse(json['dataFim'] as String),
-      valorTotal: (json['valorTotal'] as num).toDouble(),
+      quadraId: quadraId!,
+      dataInicio: dataInicio!,
+      dataFim: dataFim!,
     );
   }
 }

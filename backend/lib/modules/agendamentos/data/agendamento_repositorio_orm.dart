@@ -16,7 +16,7 @@ class AgendamentoRepositorioORM implements AgendamentoRepositorio {
       clienteId: agendamento.clienteId,
       dataInicio: agendamento.dataInicio,
       dataFim: agendamento.dataFim,
-      status: Change.set(agendamento.status),
+      status: Change.set(agendamento.status.name),
       valorTotal: agendamento.valorTotal,
     );
 
@@ -56,7 +56,7 @@ class AgendamentoRepositorioORM implements AgendamentoRepositorio {
       clienteId: ormModel.clienteId,
       dataInicio: ormModel.dataInicio,
       dataFim: ormModel.dataFim,
-      status: ormModel.status,
+      status: StatusAgendamento.values.byName(ormModel.status),
       valorTotal: (ormModel.valorTotal as num).toDouble(),
       criadoEm: ormModel.criadoEm,
       atualizadoEm: ormModel.atualizadoEm,

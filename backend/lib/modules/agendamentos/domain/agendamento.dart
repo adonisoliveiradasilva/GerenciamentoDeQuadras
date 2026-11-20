@@ -1,10 +1,16 @@
+enum StatusAgendamento {
+  pendente,
+  cancelado,
+  realizado,
+}
+
 class Agendamento {
   final int id;
   final int quadraId;
   final int clienteId;
   final DateTime dataInicio;
   final DateTime dataFim;
-  final String status;
+  final StatusAgendamento status;
   final double valorTotal;
   final DateTime criadoEm;
   final DateTime atualizadoEm;
