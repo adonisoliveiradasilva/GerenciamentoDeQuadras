@@ -207,3 +207,11 @@ Content-Type: application/json
 ### Remover funcionário
 DELETE {{base}}/funcionarios/{{funcionarioId}}
 Authorization: Bearer {{token}}
+
+### Relatório geral (padrão: últimos 30 dias)
+GET {{base}}/relatorios
+Authorization: Bearer {{token}}
+
+### Relatório filtrado por período e quadra
+GET {{base}}/relatorios?inicio=2026-11-01&fim=2026-11-30&quadraId=1
+Authorization: Bearer {{token}}
