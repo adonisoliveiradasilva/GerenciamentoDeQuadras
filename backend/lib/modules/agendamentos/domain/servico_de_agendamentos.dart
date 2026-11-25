@@ -1,6 +1,9 @@
-import '../domain/agendamento.dart';
-import '../domain/agendamento_repositorio.dart';
+import 'dart:async';
+
+import '../../../core/http/erros.dart';
 import '../../quadras/domain/quadra_repositorio.dart';
+import 'agendamento.dart';
+import 'agendamento_repositorio.dart';
 
 class ServicoDeAgendamentos {
   final AgendamentoRepositorio _agendamentoRepositorio;
@@ -13,22 +16,77 @@ class ServicoDeAgendamentos {
     required int clienteId,
     required DateTime dataInicio,
     required DateTime dataFim,
-    required double valorTotal,
+    double valorTotal = 0.0,
   }) async {
-    if (dataInicio.isAfter(dataFim) || dataInicio.isAtSameMomentAs(dataFim)) {
-      throw Exception('A data de término deve ser posterior à data de início.');
+    if (!dataInicio.isBefore(dataFim)) {
+      throw const ErroValidacao(
+        'A data de término deve ser posterior à data de início.',
+        codigo: 'INTERVALO_INVALIDO',
+      );
+    }
+
+    if (!dataInicio.isAfter(DateTime.now())) {
+      throw const ErroValidacao(
+        'O agendamento deve ser feito para um horário no futuro.',
+        codigo: 'DATA_NO_PASSADO',
+      );
     }
 
     final quadra = await _quadraRepositorio.buscarPorId(quadraId);
+
     if (quadra == null) {
-      throw Exception('Quadra não encontrada.');
+      throw const NaoEncontrado(
+        'Quadra não encontrada.',
+        'QUADRA_NAO_ENCONTRADA',
+      );
+    }
+
+    final duracaoMin = dataFim.difference(dataInicio).inMinutes;
+
+    if (duracaoMin <= 0 || duracaoMin % quadra.duracaoSessaoMin != 0) {
+      throw ErroValidacao(
+        'A duração do agendamento deve ser múltipla de ${quadra.duracaoSessaoMin} minutos.',
+        codigo: 'DURACAO_INVALIDA',
+      );
+    }
+
+    final horariosDoDia = quadra.horarios.where(
+      (h) => h.diaSemana == dataInicio.weekday,
+    );
+
+    final dentroDoFuncionamento = horariosDoDia.any((h) {
+      final abertura = DateTime(
+        dataInicio.year,
+        dataInicio.month,
+        dataInicio.day,
+        h.inicio.hora,
+        h.inicio.minuto,
+      );
+
+      final fechamento = DateTime(
+        dataInicio.year,
+        dataInicio.month,
+        dataInicio.day,
+        h.fim.hora,
+        h.fim.minuto,
+      );
+
+      return !dataInicio.isBefore(abertura) && !dataFim.isAfter(fechamento);
+    });
+
+    if (!dentroDoFuncionamento) {
+      throw const ErroValidacao(
+        'O horário escolhido está fora do funcionamento da quadra.',
+        codigo: 'FORA_DO_FUNCIONAMENTO',
+      );
     }
 
     final existeConflito = await _agendamentoRepositorio
         .existeConflitoDeHorario(quadraId, dataInicio, dataFim);
 
     if (existeConflito) {
-      throw Exception(
+      throw const Conflito(
+        'HORARIO_INDISPONIVEL',
         'Já existe um agendamento para esta quadra neste horário.',
       );
     }
@@ -39,13 +97,13 @@ class ServicoDeAgendamentos {
       clienteId: clienteId,
       dataInicio: dataInicio,
       dataFim: dataFim,
-      status: 'pendente',
+      status: StatusAgendamento.pendente,
       valorTotal: valorTotal,
       criadoEm: DateTime.now(),
       atualizadoEm: DateTime.now(),
     );
 
-    return await _agendamentoRepositorio.criar(novoAgendamento);
+    return _agendamentoRepositorio.criar(novoAgendamento);
   }
 
   Future<Agendamento> atualizarAgendamento({
@@ -58,16 +116,25 @@ class ServicoDeAgendamentos {
   }) async {
     final existente = await _agendamentoRepositorio.buscarPorId(agendamentoId);
 
-    if (existente == null || existente.status == 'cancelado') {
-      throw Exception('Agendamento não encontrado.');
+    if (existente == null || existente.status == StatusAgendamento.cancelado) {
+      throw const NaoEncontrado(
+        'Agendamento não encontrado.',
+        'AGENDAMENTO_NAO_ENCONTRADO',
+      );
     }
 
     if (existente.clienteId != clienteId) {
-      throw Exception('Você não tem permissão para alterar este agendamento.');
+      throw const ErroValidacao(
+        'Você não tem permissão para alterar este agendamento.',
+        codigo: 'SEM_PERMISSAO',
+      );
     }
 
-    if (dataInicio.isAfter(dataFim) || dataInicio.isAtSameMomentAs(dataFim)) {
-      throw Exception('A data de término deve ser posterior à data de início.');
+    if (!dataInicio.isBefore(dataFim)) {
+      throw const ErroValidacao(
+        'A data de término deve ser posterior à data de início.',
+        codigo: 'INTERVALO_INVALIDO',
+      );
     }
 
     final existeConflito = await _agendamentoRepositorio
@@ -79,7 +146,8 @@ class ServicoDeAgendamentos {
         );
 
     if (existeConflito) {
-      throw Exception(
+      throw const Conflito(
+        'HORARIO_INDISPONIVEL',
         'Já existe um agendamento para esta quadra neste horário.',
       );
     }
@@ -88,6 +156,8 @@ class ServicoDeAgendamentos {
       id: existente.id,
       quadraId: quadraId,
       clienteId: existente.clienteId,
+      quadraNome: existente.quadraNome,
+      clienteNome: existente.clienteNome,
       dataInicio: dataInicio,
       dataFim: dataFim,
       status: existente.status,
@@ -96,7 +166,7 @@ class ServicoDeAgendamentos {
       atualizadoEm: DateTime.now(),
     );
 
-    return await _agendamentoRepositorio.atualizar(atualizado);
+    return _agendamentoRepositorio.atualizar(atualizado);
   }
 
   Future<void> cancelarAgendamento({
@@ -106,12 +176,18 @@ class ServicoDeAgendamentos {
   }) async {
     final existente = await _agendamentoRepositorio.buscarPorId(agendamentoId);
 
-    if (existente == null || existente.status == 'cancelado') {
-      throw Exception('Agendamento não encontrado.');
+    if (existente == null || existente.status == StatusAgendamento.cancelado) {
+      throw const NaoEncontrado(
+        'Agendamento não encontrado.',
+        'AGENDAMENTO_NAO_ENCONTRADO',
+      );
     }
 
     if (isCliente && existente.clienteId != usuarioId) {
-      throw Exception('Você não tem permissão para cancelar este agendamento.');
+      throw const ErroValidacao(
+        'Você não tem permissão para cancelar este agendamento.',
+        codigo: 'SEM_PERMISSAO',
+      );
     }
 
     await _agendamentoRepositorio.cancelar(agendamentoId);
@@ -156,7 +232,9 @@ class ServicoDeAgendamentos {
         final local = a.dataInicio.toLocal();
 
         final dataBr =
-            '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
+            '${local.day.toString().padLeft(2, '0')}/'
+            '${local.month.toString().padLeft(2, '0')}/'
+            '${local.year}';
 
         final quadra = (a.quadraNome ?? '').toLowerCase();
         final cliente = (a.clienteNome ?? '').toLowerCase();
@@ -178,13 +256,14 @@ class ServicoDeAgendamentos {
     final quadra = await _quadraRepositorio.buscarPorId(quadraId);
 
     if (quadra == null) {
-      throw Exception('Quadra não encontrada.');
+      throw const NaoEncontrado(
+        'Quadra não encontrada.',
+        'QUADRA_NAO_ENCONTRADA',
+      );
     }
 
-    final diaSemana = dataAlvo.weekday;
-
     final horariosDoDia = quadra.horarios
-        .where((h) => h.diaSemana == diaSemana)
+        .where((h) => h.diaSemana == dataAlvo.weekday)
         .toList();
 
     if (horariosDoDia.isEmpty) return [];
@@ -207,34 +286,34 @@ class ServicoDeAgendamentos {
           fimDoDia,
         )).where((a) => a.id != ignorarAgendamentoId).toList();
 
-    final List<DateTime> slotsLivres = [];
+    final slotsLivres = <DateTime>[];
     final agora = DateTime.now();
 
-    for (final intervalo in horariosDoDia) {
-      DateTime slotAtual = DateTime(
+    for (final horario in horariosDoDia) {
+      var slotAtual = DateTime(
         dataAlvo.year,
         dataAlvo.month,
         dataAlvo.day,
-        intervalo.inicio.hora,
-        intervalo.inicio.minuto,
+        horario.inicio.hora,
+        horario.inicio.minuto,
       );
 
-      final DateTime fechamento = DateTime(
+      final fechamento = DateTime(
         dataAlvo.year,
         dataAlvo.month,
         dataAlvo.day,
-        intervalo.fim.hora,
-        intervalo.fim.minuto,
+        horario.fim.hora,
+        horario.fim.minuto,
       );
 
       while (slotAtual.isBefore(fechamento)) {
-        final DateTime fimDoSlot = slotAtual.add(
+        final fimDoSlot = slotAtual.add(
           Duration(minutes: quadra.duracaoSessaoMin),
         );
 
         if (fimDoSlot.isAfter(fechamento)) break;
 
-        final bool ocupado = agendamentosDoDia.any((agendamento) {
+        final ocupado = agendamentosDoDia.any((agendamento) {
           final agInicio = agendamento.dataInicio.toLocal();
           final agFim = agendamento.dataFim.toLocal();
 

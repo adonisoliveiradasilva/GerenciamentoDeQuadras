@@ -1,3 +1,5 @@
+enum StatusAgendamento { pendente, cancelado, realizado }
+
 class Agendamento {
   final int id;
   final int quadraId;
@@ -6,7 +8,7 @@ class Agendamento {
   final String? clienteNome;
   final DateTime dataInicio;
   final DateTime dataFim;
-  final String status;
+  final StatusAgendamento status;
   final double valorTotal;
   final DateTime criadoEm;
   final DateTime atualizadoEm;
@@ -33,7 +35,7 @@ class Agendamento {
     'clienteNome': clienteNome ?? 'Cliente #$clienteId',
     'dataInicio': dataInicio.toIso8601String(),
     'dataFim': dataFim.toIso8601String(),
-    'status': status,
+    'status': status.name,
     'valorTotal': valorTotal,
   };
 }
