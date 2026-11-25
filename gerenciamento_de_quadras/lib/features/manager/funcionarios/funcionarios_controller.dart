@@ -1,75 +1,104 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class FuncionariosController extends ChangeNotifier {
-  final List<String> _mockBancoDeDados = List.generate(25, (index) => 'Funcionário ${index + 1}');
+import '../../../core/models/usuario_model.dart';
+import '../../../core/services/usuarios_service.dart';
 
-  List<String> funcionariosFiltrados = [];
+class FuncionariosController extends ChangeNotifier {
+  final UsuariosService _service = UsuariosService();
+
+  List<UsuarioModel> funcionarios = [];
   String searchQuery = '';
   int currentPage = 1;
   int itemsPerPage = 10;
+  int totalPages = 1;
   bool isLoading = false;
+  String? errorMessage;
+
+  Timer? _debounce;
 
   FuncionariosController() {
-    funcionariosFiltrados = _mockBancoDeDados;
+    carregarFuncionarios();
   }
 
-  List<String> get funcionariosPaginados {
-    int startIndex = (currentPage - 1) * itemsPerPage;
-    int endIndex = startIndex + itemsPerPage;
-    if (startIndex >= funcionariosFiltrados.length) return [];
-    if (endIndex > funcionariosFiltrados.length) endIndex = funcionariosFiltrados.length;
-    return funcionariosFiltrados.sublist(startIndex, endIndex);
-  }
+  Future<void> carregarFuncionarios() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
 
-  int get totalPages => (funcionariosFiltrados.length / itemsPerPage).ceil();
+    try {
+      final resultado = await _service.listarFuncionarios(
+        pagina: currentPage,
+        tamanho: itemsPerPage,
+        busca: searchQuery,
+      );
+
+      funcionarios = resultado.itens;
+      totalPages = resultado.totalPaginas;
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+    } catch (e) {
+      errorMessage = e.toString().replaceAll('Exception: ', '');
+      funcionarios = [];
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 
   void pesquisar(String query) {
     searchQuery = query;
     currentPage = 1;
-    if (query.isEmpty) {
-      funcionariosFiltrados = _mockBancoDeDados;
-    } else {
-      funcionariosFiltrados = _mockBancoDeDados
-          .where((f) => f.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    }
-    notifyListeners();
+
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      carregarFuncionarios();
+    });
   }
 
   void alterarItensPorPagina(int qtd) {
     itemsPerPage = qtd;
     currentPage = 1;
-    notifyListeners();
+    carregarFuncionarios();
   }
 
   void proximaPagina() {
     if (currentPage < totalPages) {
       currentPage++;
-      notifyListeners();
+      carregarFuncionarios();
     }
   }
 
   void paginaAnterior() {
     if (currentPage > 1) {
       currentPage--;
-      notifyListeners();
+      carregarFuncionarios();
     }
   }
 
-  Future<String?> deletarFuncionario(String funcionarioName) async {
+  Future<String?> deletarFuncionario(int id) async {
     isLoading = true;
     notifyListeners();
+
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      _mockBancoDeDados.remove(funcionarioName);
-      pesquisar(searchQuery); 
-      isLoading = false;
-      notifyListeners();
+      await _service.deletarFuncionario(id);
+      if (funcionarios.length == 1 && currentPage > 1) {
+        currentPage--;
+      }
+      await carregarFuncionarios();
       return null;
     } catch (e) {
       isLoading = false;
       notifyListeners();
-      return "Erro ao remover o funcionário. Tente novamente.";
+      return e.toString().replaceAll('Exception: ', '');
     }
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 }

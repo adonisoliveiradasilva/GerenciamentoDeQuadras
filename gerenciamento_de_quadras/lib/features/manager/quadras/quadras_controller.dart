@@ -1,83 +1,104 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class QuadrasController extends ChangeNotifier {
-  final List<String> _mockBancoDeDados = List.generate(25, (index) => 'Quadra ${index + 1}');
+import '../../../core/models/quadra_model.dart';
+import '../../../core/services/quadras_service.dart';
 
-  List<String> quadrasFiltradas = [];
+class QuadrasController extends ChangeNotifier {
+  final QuadrasService _service = QuadrasService();
+
+  List<QuadraModel> quadras = [];
   String searchQuery = '';
   int currentPage = 1;
   int itemsPerPage = 10;
+  int totalPages = 1;
   bool isLoading = false;
+  String? errorMessage;
+
+  Timer? _debounce;
 
   QuadrasController() {
-    quadrasFiltradas = _mockBancoDeDados;
+    carregarQuadras();
   }
 
-  List<String> get quadrasPaginadas {
-    int startIndex = (currentPage - 1) * itemsPerPage;
-    int endIndex = startIndex + itemsPerPage;
-    
-    if (startIndex >= quadrasFiltradas.length) return [];
-    if (endIndex > quadrasFiltradas.length) endIndex = quadrasFiltradas.length;
-    
-    return quadrasFiltradas.sublist(startIndex, endIndex);
+  Future<void> carregarQuadras() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      final resultado = await _service.listarQuadras(
+        pagina: currentPage,
+        tamanho: itemsPerPage,
+        busca: searchQuery,
+      );
+
+      quadras = resultado.itens;
+      totalPages = resultado.totalPaginas;
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
+      }
+    } catch (e) {
+      errorMessage = e.toString().replaceAll('Exception: ', '');
+      quadras = [];
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 
-  Future<String?> deletarQuadra(String quadraName) async {
+  Future<String?> deletarQuadra(int id) async {
     isLoading = true;
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      // await httpClient.delete('/api/quadras/${id}');
-      
-      _mockBancoDeDados.remove(quadraName);
-      pesquisar(searchQuery); 
-      
-      isLoading = false;
-      notifyListeners();
+      await _service.deletarQuadra(id);
+      if (quadras.length == 1 && currentPage > 1) {
+        currentPage--;
+      }
+      await carregarQuadras();
       return null;
     } catch (e) {
       isLoading = false;
       notifyListeners();
-      return "Erro ao remover a quadra. Tente novamente.";
+      return e.toString().replaceAll('Exception: ', '');
     }
   }
 
-  int get totalPages => (quadrasFiltradas.length / itemsPerPage).ceil();
-
-  
   void pesquisar(String query) {
     searchQuery = query;
     currentPage = 1;
 
-    if (query.isEmpty) {
-      quadrasFiltradas = _mockBancoDeDados;
-    } else {
-      quadrasFiltradas = _mockBancoDeDados
-          .where((q) => q.toLowerCase().contains(query.toLowerCase()))
-          .toList();
-    }
-    notifyListeners();
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      carregarQuadras();
+    });
   }
 
   void alterarItensPorPagina(int qtd) {
     itemsPerPage = qtd;
     currentPage = 1;
-    notifyListeners();
+    carregarQuadras();
   }
 
   void proximaPagina() {
     if (currentPage < totalPages) {
       currentPage++;
-      notifyListeners();
+      carregarQuadras();
     }
   }
 
   void paginaAnterior() {
     if (currentPage > 1) {
       currentPage--;
-      notifyListeners();
+      carregarQuadras();
     }
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 }

@@ -1,105 +1,106 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class AgendamentoDto {
-  final String id;
-  final String data;
-  final String descricao;
-
-  AgendamentoDto({required this.id, required this.data, required this.descricao});
-}
+import '../../../core/models/agendamento_model.dart';
+import '../../../core/services/agendamentos_service.dart';
 
 class AgendamentosController extends ChangeNotifier {
+  final AgendamentosService _service = AgendamentosService();
   final bool isHistory;
-  late List<AgendamentoDto> _mockBancoDeDados;
 
-  List<AgendamentoDto> agendamentosFiltrados = [];
+  List<AgendamentoModel> agendamentos = [];
   String searchQuery = '';
   int currentPage = 1;
-  int itemsPerPage = 5; 
+  int itemsPerPage = 5;
+  int totalPages = 1;
   bool isLoading = false;
+  String? errorMessage;
+
+  Timer? _debounce;
 
   AgendamentosController({this.isHistory = false}) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    carregarAgendamentos();
+  }
 
-    final mockCompleto = List.generate(15, (index) {
-      final dt = today.add(Duration(days: index - 7));
-      final dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
-      return AgendamentoDto(id: index.toString(), data: dateStr, descricao: '08:00 - Quadra ${(index % 3) + 1}');
-    });
+  Future<void> carregarAgendamentos() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
 
-    _mockBancoDeDados = mockCompleto.where((a) {
-      final parts = a.data.split('/');
-      final dt = DateTime(int.parse(parts[2]), int.parse(parts[1]), int.parse(parts[0]));
-      
-      if (isHistory) {
-        return dt.isBefore(today);
-      } else {
-        return !dt.isBefore(today);
+    try {
+      final resultado = await _service.listarAgendamentos(
+        pagina: currentPage,
+        tamanho: itemsPerPage,
+        escopo: isHistory ? 'historico' : 'futuros',
+        busca: searchQuery,
+      );
+
+      agendamentos = resultado.itens;
+      totalPages = resultado.totalPaginas;
+      if (currentPage > totalPages) {
+        currentPage = totalPages;
       }
-    }).toList();
-
-    agendamentosFiltrados = _mockBancoDeDados;
+    } catch (e) {
+      errorMessage = e.toString().replaceAll('Exception: ', '');
+      agendamentos = [];
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
-
-  List<AgendamentoDto> get agendamentosPaginados {
-    int startIndex = (currentPage - 1) * itemsPerPage;
-    int endIndex = startIndex + itemsPerPage;
-    if (startIndex >= agendamentosFiltrados.length) return [];
-    if (endIndex > agendamentosFiltrados.length) endIndex = agendamentosFiltrados.length;
-    return agendamentosFiltrados.sublist(startIndex, endIndex);
-  }
-
-  int get totalPages => (agendamentosFiltrados.length / itemsPerPage).ceil();
 
   void pesquisar(String query) {
     searchQuery = query;
     currentPage = 1;
-    if (query.isEmpty) {
-      agendamentosFiltrados = _mockBancoDeDados;
-    } else {
-      agendamentosFiltrados = _mockBancoDeDados
-          .where((a) => a.descricao.toLowerCase().contains(query.toLowerCase()) || 
-                        a.data.contains(query))
-          .toList();
-    }
-    notifyListeners();
+
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      carregarAgendamentos();
+    });
   }
 
   void alterarItensPorPagina(int qtd) {
     itemsPerPage = qtd;
     currentPage = 1;
-    notifyListeners();
+    carregarAgendamentos();
   }
 
   void proximaPagina() {
     if (currentPage < totalPages) {
       currentPage++;
-      notifyListeners();
+      carregarAgendamentos();
     }
   }
 
   void paginaAnterior() {
     if (currentPage > 1) {
       currentPage--;
-      notifyListeners();
+      carregarAgendamentos();
     }
   }
 
-  Future<String?> cancelarAgendamento(String id) async {
+  Future<String?> cancelarAgendamento(int id) async {
     isLoading = true;
     notifyListeners();
+
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      _mockBancoDeDados.removeWhere((a) => a.id == id);
-      pesquisar(searchQuery); 
-      isLoading = false;
-      notifyListeners();
+      await _service.cancelarAgendamento(id);
+      if (agendamentos.length == 1 && currentPage > 1) {
+        currentPage--;
+      }
+      await carregarAgendamentos();
       return null;
     } catch (e) {
       isLoading = false;
       notifyListeners();
-      return "Erro ao cancelar agendamento.";
+      return e.toString().replaceAll('Exception: ', '');
     }
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 }

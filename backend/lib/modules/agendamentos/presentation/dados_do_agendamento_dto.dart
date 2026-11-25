@@ -4,11 +4,13 @@ class DadosDoAgendamentoDto {
   final int quadraId;
   final DateTime dataInicio;
   final DateTime dataFim;
+  final double valorTotal;
 
   DadosDoAgendamentoDto({
     required this.quadraId,
     required this.dataInicio,
     required this.dataFim,
+    this.valorTotal = 0.0,
   });
 
   factory DadosDoAgendamentoDto.deJson(Map<String, Object?> json) {
@@ -42,10 +44,14 @@ class DadosDoAgendamentoDto {
 
     leitor.validar();
 
+    final rawValor = json['valorTotal'];
+    final valorTotal = rawValor is num ? rawValor.toDouble() : 0.0;
+
     return DadosDoAgendamentoDto(
       quadraId: quadraId!,
       dataInicio: dataInicio!,
       dataFim: dataFim!,
+      valorTotal: valorTotal,
     );
   }
 }

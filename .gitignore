@@ -1,3 +1,114 @@
+# ==========================================
+# Environment & Sensitive Files
+# ==========================================
 .env
+.env.*
+!.env.example
+local.properties
+**/local.properties
+*.keystore
+*.jks
+
+# ==========================================
+# AI & Tooling Configs
+# ==========================================
 CLAUDE.md
 .claude/
+.structignore
+
+# ==========================================
+# IDE & Editor Files
+# ==========================================
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# OS / Misc Editors
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+*.swp
+*.swo
+.history/
+
+# ==========================================
+# Dart & Flutter (Monorepo Compatible)
+# ==========================================
+# Build outputs & caches (usando ** para pegar subpastas backend/ e gerenciamento_de_quadras/)
+build/
+**/build/
+.dart_tool/
+**/.dart_tool/
+.pub/
+**/.pub/
+.pub-cache/
+**/.pub-cache/
+doc/api/
+**/doc/api/
+coverage/
+**/coverage/
+
+# Flutter dependencies & metadata
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+**/.packages
+.widget_preview/
+
+# Dynamic/Compiled Binaries
+*.dll
+*.so
+*.dylib
+*.exe
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+
+# ==========================================
+# Android
+# ==========================================
+.gradle/
+**/.gradle/
+.kotlin/
+**/.kotlin/
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+
+# ==========================================
+# iOS & macOS
+# ==========================================
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/ephemeral/
+**/macOS/Flutter/ephemeral/
+**/ephemeral/
+xcuserdata/
+**/xcuserdata/
+DerivedData/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.moved-aside
+
+# Swift PM
+.swiftpm/
+**/.swiftpm/
+
+# ==========================================
+# Windows & Linux Desktop
+# ==========================================
+**/windows/flutter/ephemeral/
+**/linux/flutter/ephemeral/
+
+# Flutter generated plugin registrants
+**/linux/flutter/generated_*
+**/windows/flutter/generated_*
+**/macos/Flutter/GeneratedPluginRegistrant.swift

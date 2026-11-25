@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+import '../../../core/services/auth_service.dart';
 import '../quadras/quadras_page.dart';
 import '../clientes/clientes_page.dart';
 import '../funcionarios/funcionarios_page.dart';
 import '../relatorios/relatorios_page.dart';
-import '../../auth/login_page.dart'; 
+import '../../auth/login_page.dart';
 
 class ManagerLayout extends StatefulWidget {
   const ManagerLayout({super.key});
@@ -15,6 +17,7 @@ class ManagerLayout extends StatefulWidget {
 
 class _ManagerLayoutState extends State<ManagerLayout> {
   int _selectedIndex = 0;
+  final _authService = AuthService();
 
   final List<Widget> _pages = [
     const QuadrasPage(),
@@ -27,23 +30,43 @@ class _ManagerLayoutState extends State<ManagerLayout> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sair do sistema', style: TextStyle(color: Color(0xFF0D253F), fontWeight: FontWeight.bold)),
-        content: const Text('Tem certeza que deseja encerrar sua sessão?', style: TextStyle(color: Colors.blueGrey)),
+        title: const Text(
+          'Sair do sistema',
+          style: TextStyle(
+            color: Color(0xFF0D253F),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text(
+          'Tem certeza que deseja encerrar sua sessão?',
+          style: TextStyle(color: Colors.blueGrey),
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.blueGrey)),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: Colors.blueGrey),
+            ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
+              await _authService.logout();
+              if (!context.mounted) return;
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginPage()),
-                (Route<dynamic> route) => false, 
+                (Route<dynamic> route) => false,
               );
             },
-            child: const Text('Sair', style: TextStyle(color: Color(0xFFA65C5C), fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Sair',
+              style: TextStyle(
+                color: Color(0xFFA65C5C),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -54,7 +77,7 @@ class _ManagerLayoutState extends State<ManagerLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F4FA),
-      body: _pages[_selectedIndex], 
+      body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         type: BottomNavigationBarType.fixed,
@@ -71,23 +94,41 @@ class _ManagerLayoutState extends State<ManagerLayout> {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Padding(padding: EdgeInsets.only(bottom: 4), child: FaIcon(FontAwesomeIcons.tableTennisPaddleBall)),
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: FaIcon(FontAwesomeIcons.tableTennisPaddleBall),
+            ),
             label: 'Quadras',
           ),
           BottomNavigationBarItem(
-            icon: Padding(padding: EdgeInsets.only(bottom: 4), child: FaIcon(FontAwesomeIcons.solidUser)),
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: FaIcon(FontAwesomeIcons.solidUser),
+            ),
             label: 'Clientes',
           ),
           BottomNavigationBarItem(
-            icon: Padding(padding: EdgeInsets.only(bottom: 4), child: FaIcon(FontAwesomeIcons.userTie)),
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: FaIcon(FontAwesomeIcons.userTie),
+            ),
             label: 'Funcionários',
           ),
           BottomNavigationBarItem(
-            icon: Padding(padding: EdgeInsets.only(bottom: 4), child: FaIcon(FontAwesomeIcons.chartSimple)),
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: FaIcon(FontAwesomeIcons.chartSimple),
+            ),
             label: 'Relatórios',
           ),
           BottomNavigationBarItem(
-            icon: Padding(padding: EdgeInsets.only(bottom: 4), child: FaIcon(FontAwesomeIcons.arrowRightFromBracket, color: Color(0xFFA65C5C))),
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: FaIcon(
+                FontAwesomeIcons.arrowRightFromBracket,
+                color: Color(0xFFA65C5C),
+              ),
+            ),
             label: 'Sair',
           ),
         ],
