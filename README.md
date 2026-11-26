@@ -4,17 +4,21 @@ Sistema de agendamento de quadras esportivas, desenvolvido na disciplina de Ger�
 O dono da quadra cadastra quadras, funcionários e clientes e acompanha relatórios; os clientes agendam horários
 pelo aplicativo; os funcionários validam a entrada.
 
-| Pasta | O que é | Tecnologias |
-| --- | --- | --- |
-| `backend/` | API REST | Dart, Shelf, ORM `orm`, PostgreSQL 18 |
-| `gerenciamento_de_quadras/` | Aplicativo Android | Flutter |
-| `docker-compose.yml` | Banco de dados e servidor de email de testes | Docker |
+## Estrutura do projeto
+
+```
+GerenciamentoDeQuadras/
+├── backend/                   API REST (Dart, Shelf, ORM orm, PostgreSQL 18)
+├── gerenciamento_de_quadras/  Aplicativo Android (Flutter)
+├── docker-compose.yml         Banco de dados e servidor de email de testes (Docker)
+└── .env.example               Modelo das configurações locais
+```
 
 ## Pré-requisitos
 
-- [Git](https://git-scm.com/downloads)
-- [Flutter](https://docs.flutter.dev/get-started/install) (já inclui o Dart; o backend exige **Dart 3.13.4 ou mais novo**)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Git]
+- [Flutter]
+- [Docker Desktop]
 - Android Studio com um emulador Android configurado (para rodar o aplicativo)
 
 ## 1. Banco de dados e backend
@@ -64,11 +68,11 @@ Quando aparecer `Servidor iniciado na porta 8080`, a API está no ar em http://l
 
 Criados pelo comando `dart run bin/popular_banco.dart`. Rodar de novo não duplica nada.
 
-| Perfil | Email | Senha | O que pode fazer |
-| --- | --- | --- | --- |
-| Gerente | `gerente@quadras.com` | `Senha@123` | Gerenciar quadras, clientes e funcionários; ver relatórios |
-| Funcionário | `funcionario@quadras.com` | `Senha@123` | Ver os agendamentos e validar a entrada |
-| Cliente | `cliente@quadras.com` | `Senha@123` | Agendar, editar e cancelar os próprios horários |
+| Perfil      | Email                     | Senha       | O que pode fazer                                           |
+| ----------- | ------------------------- | ----------- | ---------------------------------------------------------- |
+| Gerente     | `gerente@quadras.com`     | `Senha@123` | Gerenciar quadras, clientes e funcionários; ver relatórios |
+| Funcionário | `funcionario@quadras.com` | `Senha@123` | Ver os agendamentos e validar a entrada                    |
+| Cliente     | `cliente@quadras.com`     | `Senha@123` | Agendar, editar e cancelar os próprios horários            |
 
 O script também cria a **Quadra Exemplo**, aberta todos os dias das 08:00 às 22:00, com sessões de 60 minutos.
 
@@ -89,22 +93,11 @@ pelo IP do computador na rede (por exemplo `http://192.168.0.15:8080`), com o ce
 
 ## Endereços úteis
 
-| Endereço | O que é |
-| --- | --- |
-| http://localhost:8080 | API |
+| Endereço              | O que é                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| http://localhost:8080 | API                                                                                  |
 | http://localhost:8025 | Caixa de emails de teste (Mailpit): os emails de criar e redefinir senha chegam aqui |
-| `127.0.0.1:5432` | Banco PostgreSQL (usuário `postgres`, senha `postgres`, banco `gerenciador_quadras`) |
+| `127.0.0.1:5432`      | Banco PostgreSQL (usuário `postgres`, senha `postgres`, banco `gerenciador_quadras`) |
 
 Exemplos de chamadas da API estão em `backend/requisicoes.http` e podem ser executados no VS Code com a extensão
 **REST Client**.
-
-## Problemas comuns
-
-| Mensagem ou sintoma | Causa | Solução |
-| --- | --- | --- |
-| `Não foi possível conectar ao banco de dados` ou `O computador remoto recusou a conexão` | Banco desligado | Abrir o Docker Desktop e rodar `docker compose up -d` |
-| `failed to connect to the docker API` | Docker Desktop fechado | Abrir o Docker Desktop e esperar carregar |
-| `Missing extension byte` ao conectar | Um PostgreSQL instalado no Windows está ocupando a porta 5432 | Parar o serviço `postgresql-x64-...` em `services.msc` |
-| `relation "..." does not exist` | Faltam tabelas | `dart run orm.config.dart migrate apply` dentro de `backend/` |
-| Login falha com os usuários de exemplo | Dados de exemplo não criados | `dart run bin/popular_banco.dart` dentro de `backend/` |
-| O aplicativo não conecta na API | API desligada, ou endereço errado para o aparelho | Conferir se `dart run bin/backend.dart` está rodando e o `baseUrl` (seção 3) |
