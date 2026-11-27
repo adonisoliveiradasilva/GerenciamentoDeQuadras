@@ -9,6 +9,15 @@ class CredenciaisInvalidas extends NaoAutenticado {
     : super('Email ou senha incorretos.', 'CREDENCIAIS_INVALIDAS');
 }
 
+class UsuarioRemovido extends ErroApi {
+  const UsuarioRemovido()
+    : super(
+        403,
+        'USUARIO_REMOVIDO',
+        'Seu acesso foi removido. Fale com o gerente.',
+      );
+}
+
 class ResultadoDoLogin {
   const ResultadoDoLogin({required this.token, required this.usuario});
 
@@ -33,19 +42,16 @@ class FazerLogin {
     required String senha,
   }) async {
     final usuario = await _usuarios.buscarPorEmail(email);
-    final hash = usuario?.senhaHash;
 
-    if (usuario == null || hash == null) {
-      await _hashDeSenha.conferir(
-        senha,
-        await (_hashParaEmailInexistente ??= _hashDeSenha.gerar(
-          'senha-de-usuario-inexistente',
-        )),
-      );
+    if (usuario == null) {
+      final removido = await _usuarios.buscarRemovidoPorEmail(email);
+      if (await _senhaConfere(senha, removido?.senhaHash)) {
+        throw const UsuarioRemovido();
+      }
       throw const CredenciaisInvalidas();
     }
 
-    if (!await _hashDeSenha.conferir(senha, hash)) {
+    if (!await _senhaConfere(senha, usuario.senhaHash)) {
       throw const CredenciaisInvalidas();
     }
 
@@ -53,5 +59,16 @@ class FazerLogin {
       UsuarioAutenticado(id: usuario.id, perfil: usuario.perfil),
     );
     return ResultadoDoLogin(token: token, usuario: usuario);
+  }
+
+  Future<bool> _senhaConfere(String senha, String? hash) async {
+    if (hash != null) return _hashDeSenha.conferir(senha, hash);
+    await _hashDeSenha.conferir(
+      senha,
+      await (_hashParaEmailInexistente ??= _hashDeSenha.gerar(
+        'senha-de-usuario-inexistente',
+      )),
+    );
+    return false;
   }
 }
